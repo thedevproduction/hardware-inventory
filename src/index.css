@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-amber: #f59e0b;
+  --primary-amber-dark: #d97706;
+  --bg-slate: #0b1329;
+  --card-bg: rgba(30, 41, 59, 0.7);
+  --excel-grid-border: #334155;
+  --excel-header-bg: #1e293b;
+  --excel-active-cell: #f59e0b;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #070d19;
+  color: #f1f5f9;
+  min-height: 100vh;
+}
+
+/* Typography Headings */
+h1, h2, h3, h4, .font-heading {
+  font-family: 'Outfit', sans-serif;
+}
+
+.font-mono-num {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #f59e0b;
+}
+
+/* Excel Cell Focus Highlight */
+.excel-cell-input {
+  background: transparent;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  outline: none;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+}
+
+.excel-cell-input:focus {
+  background-color: rgba(245, 158, 11, 0.12);
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+  border-radius: 2px;
+}
+
+.excel-header-cell {
+  background-color: #1e293b;
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 10px;
+  border: 1px solid #334155;
+  user-select: none;
+}
+
+/* Hardware Glow Badge */
+.hardware-glow-amber {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+}
+
+.glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* =========================================================
+   PRINT STYLES (@media print)
+   ========================================================= */
+@media print {
+  /* Hide all interactive web chrome */
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print,
+  nav,
+  header,
+  button,
+  .modal-overlay-bg,
+  .app-header-bar,
+  .excel-toolbar,
+  .quick-action-bar {
+    display: none !important;
+  }
+
+  .print-only-container {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* GST A4 Invoice Print Styling */
+  .a4-print-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 10mm 12mm;
+    box-sizing: border-box;
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-size: 11pt;
+  }
+
+  /* Thermal 80mm Slip Print Styling */
+  .thermal-print-page {
+    width: 78mm;
+    padding: 2mm 3mm;
+    box-sizing: border-box;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 9pt;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Ensure Excel Grid tables retain clean borders on paper */
+  table.print-table {
+    width: 100%;
+    border-collapse: collapse !important;
+  }
+  table.print-table th,
+  table.print-table td {
+    border: 1px solid #1e293b !important;
+    padding: 5px 8px !important;
+    color: #000000 !important;
+  }
+
+  @page {
+    size: auto;
+    margin: 5mm;
+  }
+}

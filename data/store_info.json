@@ -1,0 +1,20 @@
+{
+  "name": "Sudama Hardware",
+  "tagline": "Dealers in Pipes, Power Tools, Sanitaryware, Electrical & Building Hardware",
+  "address": "Shop No. 12-14, Industrial Area Phase II, Station Road, Raipur, CG - 492001",
+  "phone": "+91 98271 88990 / +91 771 4059911",
+  "email": "billing@sudamahardware.com",
+  "gstin": "22AAACS8890A1Z5",
+  "pan": "AAACS8890A",
+  "bankName": "State Bank of India",
+  "accountNo": "39880199201",
+  "ifsc": "SBIN0001244",
+  "branch": "Raipur Main Branch",
+  "upiId": "sudamahardware@sbi",
+  "terms": [
+    "1. Goods once sold will not be taken back or exchanged.",
+    "2. Interest @ 18% p.a. will be charged if bill is not paid on due date.",
+    "3. Subject to Raipur Jurisdiction only.",
+    "4. Guarantee/Warranty as per manufacturer policies."
+  ]
+}

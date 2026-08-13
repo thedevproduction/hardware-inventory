@@ -1,0 +1,173 @@
+[
+  {
+    "id": "p1",
+    "name": "CPVC Pipe 1\" (3 Meter)",
+    "category": "Plumbing",
+    "hsn": "3917",
+    "rate": 380,
+    "unit": "Pcs",
+    "gst": 18
+  },
+  {
+    "id": "p2",
+    "name": "PVC Elbow 1\" 90 Degree Heavy",
+    "category": "Plumbing",
+    "hsn": "3917",
+    "rate": 28,
+    "unit": "Pcs",
+    "gst": 18
+  },
+  {
+    "id": "p3",
+    "name": "Brass Tank Nipple 1\"",
+    "category": "Plumbing",
+    "hsn": "7412",
+    "rate": 145,
+    "unit": "Pcs",
+    "gst": 18
+  },
+  {
+    "id": "p4",
+    "name": "Teflon Thread Seal Tape (12mm x 10m)",
+    "category": "Plumbing",
+    "hsn": "3919",
+    "rate": 15,
+    "unit": "Pcs",
+    "gst": 18
+  },
+  {
+    "id": "p5",
+    "name": "Solvent Cement CPVC 250ml Tin",
+    "category": "Plumbing",
+    "hsn": "3506",
+    "rate": 210,
+    "unit": "Tin",
+    "gst": 18
+  },
+  {
+    "id": "p6",
+    "name": "PTFE Ball Valve Brass 1\" Heavy",
+    "category": "Plumbing",
+    "hsn": "8481",
+    "rate": 320,
+    "unit": "Pcs",
+    "gst": 18
+  },
+  {
+    "id": "e1",
+    "name": "Modular Copper Wire 1.5 sq mm (90m Roll)",
+    "category": "Electrical",
+    "hsn": "8544",
+    "rate": 1650,
+    "unit": "Roll",
+    "gst": 18
+  },
+  {
+    "id": "e2",
+    "name": "Modular Copper Wire 2.5 sq mm (90m Roll)",
+    "category": "Electrical",
+    "hsn": "8544",
+    "rate": 2680,
+    "unit": "Roll",
+    "gst": 18
+  },
+  {
+    "id": "e3",
+    "name": "Single Pole MCB 16A C-Curve",
+    "category": "Electrical",
+    "hsn": "8536",
+    "rate": 175,
+    "unit": "Pcs",
+    "gst": 18
+  },
+  {
+    "id": "e4",
+    "name": "Modular 6A 1-Way Switch Silver",
+    "category": "Electrical",
+    "hsn": "8536",
+    "rate": 42,
+    "unit": "Pcs",
+    "gst": 18
+  },
+  {
+    "id": "t1",
+    "name": "Professional Impact Drill Machine 13mm 650W",
+    "category": "Tools",
+    "hsn": "8467",
+    "rate": 2450,
+    "unit": "Set",
+    "gst": 18
+  },
+  {
+    "id": "t2",
+    "name": "Angle Grinder 4 Inch 850W",
+    "category": "Tools",
+    "hsn": "8467",
+    "rate": 2150,
+    "unit": "Pcs",
+    "gst": 18
+  },
+  {
+    "id": "t3",
+    "name": "Claw Hammer 500g Fiber Handle",
+    "category": "Tools",
+    "hsn": "8205",
+    "rate": 280,
+    "unit": "Pcs",
+    "gst": 18
+  },
+  {
+    "id": "f1",
+    "name": "Drywall Screws 35mm x 6 (1000 Pcs Box)",
+    "category": "Fasteners",
+    "hsn": "7318",
+    "rate": 420,
+    "unit": "Box",
+    "gst": 18
+  },
+  {
+    "id": "f2",
+    "name": "MS Hex Nut Bolt 10mm x 50mm (per kg)",
+    "category": "Fasteners",
+    "hsn": "7318",
+    "rate": 135,
+    "unit": "Kg",
+    "gst": 18
+  },
+  {
+    "id": "pt1",
+    "name": "Synthetic Enamel Paint Gloss White 4L",
+    "category": "Paints",
+    "hsn": "3208",
+    "rate": 1250,
+    "unit": "Bucket",
+    "gst": 28
+  },
+  {
+    "id": "pt2",
+    "name": "Acrylic Wall Primer Exterior 20L",
+    "category": "Paints",
+    "hsn": "3209",
+    "rate": 2180,
+    "unit": "Bucket",
+    "gst": 28
+  },
+  {
+    "id": "lk1",
+    "name": "Double Cylinder Main Door Lock SS",
+    "category": "Hardware",
+    "hsn": "8301",
+    "rate": 1850,
+    "unit": "Set",
+    "gst": 18
+  },
+  {
+    "id": "lk2",
+    "name": "SS Mortise Handle Pair 8 Inch Satin",
+    "category": "Hardware",
+    "hsn": "8302",
+    "rate": 980,
+    "unit": "Pair",
+    "gst": 18
+  }
+]
