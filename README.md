@@ -66,14 +66,18 @@ This is the **recommended method** to ensure all bills, catalog items, customer 
   - As soon as you type or select a customer name in **Customer & Billing Information**, the system automatically populates Mobile Number, GSTIN, Site Address, and Customer Type!
   - Clickable **`⚡ Fill {Name}`** chips appear below the customer input for 1-click filling.
 
-### 4. 💾 100% Risk-Free Physical Hard Disk Storage
+### 4. 💾 100% Risk-Free Physical Hard Disk Storage & Sequential Counter
 - Automatically persists all store data into dedicated JSON files in the `/data` folder on your computer's hard drive:
   - 📁 `data/invoices.json` (Stores all saved billing registers & sales history)
+  - 📁 `data/invoice_counter.json` (Stores persistent sequential invoice number sequence: `1001`, `1002`, `1003`...)
   - 📁 `data/catalog.json` (Stores your custom hardware catalog items)
   - 📁 `data/customers.json` (Stores your registered customer directory)
+  - 📁 `data/vendors.json` (Stores your registered hardware suppliers)
+  - 📁 `data/vendor_purchases.json` (Stores vendor purchase records & price history)
   - 📁 `data/store_info.json` (Stores GSTIN, store address, bank & UPI handles)
   - 📁 `data/users.json` (Stores staff user accounts & credentials)
 - Real-time automatic synchronization on every save, add, edit, or delete action.
+- **Portability**: Copying the project folder to any other computer preserves the last generated invoice sequence and continues incrementing sequentially without resets or random gaps!
 
 ### 5. 📊 Interactive Excel Spreadsheet Grid with PP Margin Column
 - Live Excel formula calculations: `Qty × (Rate × (1 + PP%/100)) - Discount % + CGST/SGST/IGST`.

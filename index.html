@@ -464,6 +464,19 @@
       XLSX.writeFile(workbook, `Sudama_Hardware_Invoice_${invoiceNumber.replace(/\//g, '-')}.xlsx`);
     }
 
+    
+    // --- SEQUENTIAL INVOICE NUMBER HELPERS ---
+    function extractInvoiceSeq(invStr) {
+      if (!invStr) return 0;
+      const match = invStr.match(/(\d+)$/);
+      return match ? parseInt(match[1], 10) : 0;
+    }
+
+    function formatInvoiceNumber(seq) {
+      const padded = seq.toString().padStart(4, '0');
+      return `SH/2026-27/${padded}`;
+    }
+
     // --- MAIN APP COMPONENT ---
     function App() {
       // User Accounts State
@@ -509,27 +522,32 @@
         return c ? JSON.parse(c) : INITIAL_HARDWARE_CATALOG;
       });
 
+      
+      // Persistent Sequential Invoice Counter State
+      const [lastInvoiceSeq, setLastInvoiceSeq] = useState(() => {
+        const s = localStorage.getItem('sudama_last_invoice_seq');
+        return s ? parseInt(s, 10) : 1000;
+      });
+
       const [customer, setCustomer] = useState({
-        name: "Ramesh Construction & Builders",
-        phone: "+91 98270 44551",
-        gstin: "22BKPPS9910A1Z2",
-        address: "Site No. 4, Shankar Nagar, Raipur, CG",
+        name: "",
+        phone: "",
+        gstin: "",
+        address: "",
         placeOfSupply: "Raipur (22)"
       });
 
-      const [invoiceNumber, setInvoiceNumber] = useState(`SH/2026-27/${Math.floor(1000 + Math.random() * 9000)}`);
+      const [invoiceNumber, setInvoiceNumber] = useState(() => formatInvoiceNumber(lastInvoiceSeq + 1));
       const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
       const [dueDate, setDueDate] = useState(() => {
         const d = new Date(); d.setDate(d.getDate() + 14); return d.toISOString().split('T')[0];
       });
       const [paymentMode, setPaymentMode] = useState("Cash Paid");
-      const [customerType, setCustomerType] = useState("Contractor");
+      const [customerType, setCustomerType] = useState("Walk-in");
       const [isIgst, setIsIgst] = useState(false);
 
       const [rows, setRows] = useState([
-        { id: "r1", itemName: 'CPVC Pipe 1" (3 Meter)', hsn: "3917", qty: 10, unit: "Pcs", rate: 380, ppPercent: 2, discountPercent: 5, gstPercent: 18 },
-        { id: "r2", itemName: "Modular Copper Wire 2.5 sq mm (90m Roll)", hsn: "8544", qty: 2, unit: "Roll", rate: 2680, ppPercent: 5, discountPercent: 10, gstPercent: 18 },
-        { id: "r3", itemName: "Professional Impact Drill Machine 13mm", hsn: "8467", qty: 1, unit: "Set", rate: 2450, ppPercent: 3, discountPercent: 5, gstPercent: 18 }
+        { id: "r1", itemName: "", hsn: "3917", qty: 1, unit: "Pcs", rate: 0, ppPercent: 0, discountPercent: 0, gstPercent: 18 }
       ]);
 
       const [miscCharges, setMiscCharges] = useState(0);
@@ -652,6 +670,19 @@
             }
             if (data.vendorPurchases && Array.isArray(data.vendorPurchases) && data.vendorPurchases.length > 0) {
               setVendorPurchases(data.vendorPurchases);
+            }
+
+            
+            if (typeof data.lastInvoiceSeq === 'number') {
+              let maxSeq = data.lastInvoiceSeq;
+              if (data.invoices && Array.isArray(data.invoices)) {
+                data.invoices.forEach(inv => {
+                  const seq = extractInvoiceSeq(inv.invoiceNumber);
+                  if (seq > maxSeq) maxSeq = seq;
+                });
+              }
+              setLastInvoiceSeq(maxSeq);
+              setInvoiceNumber(formatInvoiceNumber(maxSeq + 1));
             }
 
             setDiskStatus("Disk Connected");
@@ -825,22 +856,28 @@
       const currentInvoiceData = { customer, rows, summary, invoiceNumber, invoiceDate, dueDate, paymentMode, isIgst };
 
       // --- NEW BILLING ACTION ---
+      
       const handleNewBilling = () => {
-        if (rows.length > 0 && rows[0].itemName.trim() !== "") {
-          if (!confirm("Start a clean new bill? Current unsaved changes will be reset.")) return;
-        }
-        setCustomer({ name: "", phone: "", gstin: "", address: "", placeOfSupply: "Raipur (22)" });
-        setInvoiceNumber(`SH/2026-27/${Math.floor(1000 + Math.random() * 9000)}`);
-        setInvoiceDate(new Date().toISOString().split('T')[0]);
-        const d = new Date(); d.setDate(d.getDate() + 14);
-        setDueDate(d.toISOString().split('T')[0]);
-        setPaymentMode("Cash Paid");
+        let highestSeq = lastInvoiceSeq;
+        savedInvoices.forEach(inv => {
+          const seq = extractInvoiceSeq(inv.invoiceNumber);
+          if (seq > highestSeq) highestSeq = seq;
+        });
+        setInvoiceNumber(formatInvoiceNumber(highestSeq + 1));
+        setCustomer({
+          name: "",
+          phone: "",
+          gstin: "",
+          address: "",
+          placeOfSupply: "Raipur (22)"
+        });
         setCustomerType("Walk-in");
+        setRows([
+          { id: `r-${Date.now()}-1`, itemName: "", hsn: "3917", qty: 1, unit: "Pcs", rate: 0, ppPercent: 0, discountPercent: 0, gstPercent: 18 }
+        ]);
         setMiscCharges(0);
-        setShowPpTotal(false);
-        setRows([{ id: `row-${Date.now()}`, itemName: "", hsn: "3917", qty: 1, unit: "Pcs", rate: 0, ppPercent: 0, discountPercent: 0, gstPercent: 18 }]);
-        if (window.confetti) confetti({ particleCount: 35, spread: 50, origin: { y: 0.7 } });
       };
+
 
       // --- ITEM NAME INPUT WITH INSTANT AUTO-FILL LOOKUP ---
       const handleItemNameInput = (idx, text) => {
@@ -877,12 +914,20 @@
         setRows(rows.filter((_, i) => i !== idx));
       };
 
+      
       const handleSaveInvoice = () => {
+        const currentSeq = extractInvoiceSeq(invoiceNumber);
         const record = { id: `inv-${Date.now()}`, ...currentInvoiceData };
         const filtered = savedInvoices.filter(i => i.invoiceNumber !== invoiceNumber);
         setSavedInvoices([record, ...filtered]);
+
+        const newSeq = Math.max(lastInvoiceSeq, currentSeq);
+        setLastInvoiceSeq(newSeq);
+
         if (window.confetti) confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
         alert(`Invoice ${invoiceNumber} saved to store register!`);
+
+        setInvoiceNumber(formatInvoiceNumber(newSeq + 1));
       };
 
 
@@ -2201,7 +2246,7 @@
                       </div>
                       <div className="text-right">
                         <span className="inline-block bg-slate-900 text-white font-bold text-xs px-3 py-1 rounded uppercase tracking-wider mb-2">TAX INVOICE</span>
-                        <div className="text-[11px] text-slate-800 font-mono"><div>GSTIN: <span className="font-bold">{storeInfo.gstin}</span></div><div>State: 22 (Chhattisgarh)</div></div>
+                        <div className="text-[11px] text-slate-800 font-mono"><div>GSTIN: <span className="font-bold">{storeInfo.gstin}</span></div><div>City/State: Jabalpur (M.P)</div></div>
                       </div>
                     </div>
 

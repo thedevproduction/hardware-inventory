@@ -2,6 +2,7 @@ import http.server
 import socketserver
 import json
 import os
+import re
 from urllib.parse import urlparse
 
 PORT = 3000
@@ -18,6 +19,7 @@ USERS_FILE = os.path.join(DATA_DIR, 'users.json')
 CUSTOMERS_FILE = os.path.join(DATA_DIR, 'customers.json')
 VENDORS_FILE = os.path.join(DATA_DIR, 'vendors.json')
 PURCHASES_FILE = os.path.join(DATA_DIR, 'vendor_purchases.json')
+COUNTER_FILE = os.path.join(DATA_DIR, 'invoice_counter.json')
 
 DEFAULT_USERS = [
     {
@@ -176,6 +178,27 @@ def load_json(filepath, default):
             print(f"Error loading {filepath}: {e}")
     return default
 
+
+def get_last_invoice_seq():
+    if os.path.exists(COUNTER_FILE):
+        try:
+            with open(COUNTER_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                return data.get('lastSeq', 1000)
+        except Exception:
+            pass
+    invoices = load_json(INVOICES_FILE, [])
+    max_seq = 1000
+    for inv in invoices:
+        inv_no = inv.get('invoiceNumber', '')
+        match = re.search(r'(\d+)$', inv_no)
+        if match:
+            seq = int(match.group(1))
+            if seq > max_seq:
+                max_seq = seq
+    save_json(COUNTER_FILE, {'lastSeq': max_seq})
+    return max_seq
+
 def save_json(filepath, data):
     try:
         with open(filepath, 'w', encoding='utf-8') as f:
@@ -206,7 +229,8 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                 'users': load_json(USERS_FILE, DEFAULT_USERS),
                 'customers': load_json(CUSTOMERS_FILE, DEFAULT_CUSTOMERS),
                 'vendors': load_json(VENDORS_FILE, DEFAULT_VENDORS),
-                'vendorPurchases': load_json(PURCHASES_FILE, DEFAULT_VENDOR_PURCHASES)
+                'vendorPurchases': load_json(PURCHASES_FILE, DEFAULT_VENDOR_PURCHASES),
+                'lastInvoiceSeq': get_last_invoice_seq()
             }
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
@@ -273,6 +297,15 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({'status': 'ok', 'message': 'Vendors saved to disk'}).encode('utf-8'))
+            return
+
+        
+        elif parsed.path == '/api/counter':
+            save_json(COUNTER_FILE, payload)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'status': 'ok', 'message': 'Invoice counter saved to disk'}).encode('utf-8'))
             return
 
         elif parsed.path == '/api/vendor_purchases':
