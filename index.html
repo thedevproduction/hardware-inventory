@@ -168,23 +168,24 @@
     ];
 
     // --- DEFAULT HARDWARE DATA ---
-    const DEFAULT_STORE_INFO = {
+        const DEFAULT_STORE_INFO = {
       name: "Sudama Hardware",
       tagline: "Dealers in Pipes, Power Tools, Sanitaryware, Electrical & Building Hardware",
-      address: "Shop No. 12-14, Industrial Area Phase II, Station Road, Raipur, CG - 492001",
+      address: "S R Tower bajnamath chowk, Madhya Pradesh 482003",
       phone: "+91 98271 88990 / +91 771 4059911",
       email: "billing@sudamahardware.com",
+      state: "23 (Madhya Pradesh)",
       gstin: "22AAACS8890A1Z5",
       pan: "AAACS8890A",
       bankName: "State Bank of India",
       accountNo: "39880199201",
       ifsc: "SBIN0001244",
-      branch: "Raipur Main Branch",
+      branch: "Jabalpur Branch",
       upiId: "sudamahardware@sbi",
       terms: [
         "1. Goods once sold will not be taken back or exchanged.",
         "2. Interest @ 18% p.a. will be charged if bill is not paid on due date.",
-        "3. Subject to Raipur Jurisdiction only.",
+        "3. Subject to Jabalpur Jurisdiction only.",
         "4. Guarantee/Warranty as per manufacturer policies."
       ]
     };
@@ -2223,133 +2224,198 @@
             );
           })()}
 
-          {/* PRINT PREVIEW MODAL */}
-          {isPrintOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 print-modal-overlay bg-slate-950/90 backdrop-blur-md overflow-y-auto">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto print-modal-box">
-                <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950 no-print">
-                  <h3 className="font-bold text-white font-heading">Print Tax Invoice Preview ({invoiceNumber})</h3>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => window.print()} className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-1.5 rounded-lg text-xs shadow-lg shadow-amber-500/20">Print / Save PDF</button>
-                    <button onClick={() => setIsPrintOpen(false)} className="text-slate-400 hover:text-white px-2">✕</button>
+                    {/* PRINT PREVIEW MODAL WITH MULTI-PAGE PAGINATION & CLEAN LIGHT HEADERS */}
+          {isPrintOpen && (() => {
+            const itemsPerPage = 18;
+            const validRows = rows && rows.length > 0 ? rows : [];
+            const pageChunks = [];
+            if (validRows.length === 0) {
+              pageChunks.push([]);
+            } else {
+              for (let i = 0; i < validRows.length; i += itemsPerPage) {
+                pageChunks.push(validRows.slice(i, i + itemsPerPage));
+              }
+            }
+            const totalPages = pageChunks.length;
+
+            return (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 print-modal-overlay bg-slate-950/90 backdrop-blur-md overflow-y-auto">
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto print-modal-box">
+                  
+                  {/* Modal Toolbar (Hidden during print) */}
+                  <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950 no-print">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-bold text-white font-heading text-sm">Print Tax Invoice Preview ({invoiceNumber})</h3>
+                      <span className="bg-slate-800 text-slate-300 text-[10px] px-2.5 py-0.5 rounded font-mono font-semibold border border-slate-700">
+                        {validRows.length} Items • {totalPages} {totalPages === 1 ? 'Page' : 'Pages'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => window.print()} className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-1.5 rounded-lg text-xs shadow-lg shadow-amber-500/20">
+                        🖨️ Print / Save PDF
+                      </button>
+                      <button onClick={() => setIsPrintOpen(false)} className="text-slate-400 hover:text-white px-2">✕</button>
+                    </div>
                   </div>
-                </div>
 
-                <div className="p-6 overflow-y-auto bg-slate-950 flex-1 flex justify-center print-page-scroll-area">
-                  <div className="a4-print-page bg-white text-slate-900 w-full max-w-[210mm] min-h-[297mm] p-8 font-sans text-xs border border-slate-300">
-                    <div className="border-b-2 border-slate-900 pb-3 mb-4 flex justify-between items-start">
-                      <div>
-                        <h1 className="text-xl font-extrabold tracking-tight text-slate-950 uppercase font-heading">{storeInfo.name}</h1>
-                        <p className="text-[10px] text-slate-600 font-medium mt-0.5">{storeInfo.tagline}</p>
-                        <p className="text-[10px] text-slate-500 mt-1">{storeInfo.address}</p>
-                        <p className="text-[10px] text-slate-700 font-semibold mt-0.5">Ph: {storeInfo.phone} | Email: {storeInfo.email}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="inline-block bg-slate-900 text-white font-bold text-xs px-3 py-1 rounded uppercase tracking-wider mb-2">TAX INVOICE</span>
-                        <div className="text-[11px] text-slate-800 font-mono"><div>GSTIN: <span className="font-bold">{storeInfo.gstin}</span></div><div>City/State: Jabalpur (M.P)</div></div>
-                      </div>
-                    </div>
+                  {/* Scrollable A4 Pages Container */}
+                  <div className="p-6 overflow-y-auto bg-slate-950 flex-1 flex flex-col items-center gap-8 print-page-scroll-area">
+                    {pageChunks.map((chunkRows, pageIdx) => {
+                      const isLastPage = pageIdx === totalPages - 1;
+                      const startItemIdx = pageIdx * itemsPerPage;
 
-                    <div className="grid grid-cols-2 gap-4 border border-slate-300 rounded p-3 mb-4 bg-slate-50 text-[11px]">
-                      <div>
-                        {customer && customer.name && customer.name.trim().length > 0 ? (
-                          <>
-                            <div className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Billed To:</div>
-                            <div className="font-bold text-slate-900">{customer.name}</div>
-                            {customer.phone && <div>Mob: {customer.phone}</div>}
-                            {customer.address && <div>{customer.address}</div>}
-                            {customer.gstin && <div className="font-mono">GSTIN: {customer.gstin}</div>}
-                          </>
-                        ) : null}
-                      </div>
-                      <div className="text-right space-y-0.5 text-slate-700">
-                        <div>Invoice No: <span className="font-bold font-mono text-slate-950">{invoiceNumber}</span></div>
-                        <div>Invoice Date: <span className="font-mono">{invoiceDate}</span></div>
-                        <div>Payment Terms: <span className="font-semibold text-slate-900">{paymentMode}</span></div>
-                        <div>Billed By: <span className="font-semibold text-slate-950">{currentUser ? (currentUser.name || currentUser.username) : "Staff Cashier"}</span></div>
-                      </div>
-                    </div>
+                      return (
+                        <div
+                          key={pageIdx}
+                          className="a4-print-page bg-white text-slate-900 w-full max-w-[210mm] min-h-[297mm] p-8 font-sans text-xs border border-slate-300 shadow-xl flex flex-col justify-between"
+                          style={{ pageBreakAfter: pageIdx < totalPages - 1 ? 'always' : 'auto', breakAfter: pageIdx < totalPages - 1 ? 'page' : 'auto' }}
+                        >
+                          <div>
+                            {/* Header: Store Info & Tax Invoice Label (Light Clean Style) */}
+                            <div className="border-b-2 border-slate-900 pb-3 mb-4 flex justify-between items-start">
+                              <div>
+                                <h1 className="text-xl font-extrabold tracking-tight text-slate-950 uppercase font-heading">{storeInfo.name}</h1>
+                                <p className="text-[10px] text-slate-600 font-medium mt-0.5">{storeInfo.tagline}</p>
+                                <p className="text-[10px] text-slate-500 mt-1">{storeInfo.address}</p>
+                                <p className="text-[10px] text-slate-700 font-semibold mt-0.5">Ph: {storeInfo.phone} | Email: {storeInfo.email}</p>
+                              </div>
+                              <div className="text-right">
+                                <span className="inline-block border-2 border-slate-900 text-slate-950 font-extrabold text-xs px-3 py-0.5 rounded uppercase tracking-wider mb-2">
+                                  TAX INVOICE
+                                </span>
+                                <div className="text-[11px] text-slate-800 font-mono">
+                                  <div>GSTIN: <span className="font-bold">{storeInfo.gstin}</span></div>
+                                  <div>State: {storeInfo.state || "23 (Madhya Pradesh)"}</div>
+                                </div>
+                              </div>
+                            </div>
 
-                    <table className="w-full border-collapse border border-slate-300 text-left mb-4 text-[11px]">
-                      <thead>
-                        <tr className="bg-slate-900 text-white text-[10px] uppercase font-bold">
-                          <th className="p-1.5 border border-slate-900 text-center w-6">#</th>
-                          <th className="p-1.5 border border-slate-900">Description of Goods</th>
-                          <th className="p-1.5 border border-slate-900 text-center">HSN</th>
-                          <th className="p-1.5 border border-slate-900 text-center">Qty</th>
-                          <th className="p-1.5 border border-slate-900 text-right">Rate</th>
-                          <th className="p-1.5 border border-slate-900 text-right">Disc%</th>
-                          <th className="p-1.5 border border-slate-900 text-right">Taxable</th>
-                          <th className="p-1.5 border border-slate-900 text-center">GST</th>
-                          <th className="p-1.5 border border-slate-900 text-right">Amount (₹)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rows.map((r, i) => {
-                          const t = calculateRowTotals(r);
-                          return (
-                            <tr key={i} className="border-b border-slate-300">
-                              <td className="p-1.5 border border-slate-300 text-center font-mono">{i + 1}</td>
-                              <td className="p-1.5 border border-slate-300 font-semibold text-slate-900">{r.itemName}</td>
-                              <td className="p-1.5 border border-slate-300 text-center font-mono">{r.hsn}</td>
-                              <td className="p-1.5 border border-slate-300 text-center font-bold">{r.qty} {r.unit}</td>
-                              <td className="p-1.5 border border-slate-300 text-right font-mono">₹{t.sellingRate.toFixed(2)}</td>
-                              <td className="p-1.5 border border-slate-300 text-right font-mono">{r.discountPercent}%</td>
-                              <td className="p-1.5 border border-slate-300 text-right font-mono">₹{t.taxable.toFixed(2)}</td>
-                              <td className="p-1.5 border border-slate-300 text-center font-mono">{r.gstPercent}%</td>
-                              <td className="p-1.5 border border-slate-300 text-right font-bold font-mono text-slate-950">₹{t.lineTotal.toFixed(2)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                            {/* Customer & Invoice Details Bar */}
+                            <div className="grid grid-cols-2 gap-4 border border-slate-300 rounded p-3 mb-4 bg-slate-50 text-[11px]">
+                              <div>
+                                {customer && customer.name && customer.name.trim().length > 0 ? (
+                                  <>
+                                    <div className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Billed To:</div>
+                                    <div className="font-bold text-slate-900">{customer.name}</div>
+                                    {customer.phone && <div>Mob: {customer.phone}</div>}
+                                    {customer.address && <div>{customer.address}</div>}
+                                    {customer.gstin && <div className="font-mono">GSTIN: {customer.gstin}</div>}
+                                  </>
+                                ) : null}
+                              </div>
+                              <div className="text-right space-y-0.5 text-slate-700">
+                                <div>Invoice No: <span className="font-bold font-mono text-slate-950">{invoiceNumber}</span></div>
+                                <div>Invoice Date: <span className="font-mono">{invoiceDate}</span></div>
+                                <div>Payment Terms: <span className="font-semibold text-slate-900">{paymentMode}</span></div>
+                                <div>Billed By: <span className="font-semibold text-slate-950">{currentUser ? (currentUser.name || currentUser.username) : "Staff Cashier"}</span></div>
+                              </div>
+                            </div>
 
-                    <div className="grid grid-cols-2 gap-4 items-start mb-6">
-                      <div className="border border-slate-300 rounded p-3 bg-slate-50 text-[10px] space-y-1">
-                        <div className="font-bold text-slate-700 uppercase">Bank & UPI Payment Details</div>
-                        <div>Bank: <span className="font-semibold">{storeInfo.bankName}</span></div>
-                        <div>A/c No: <span className="font-mono font-bold">{storeInfo.accountNo}</span></div>
-                        <div>IFSC: <span className="font-mono">{storeInfo.ifsc}</span></div>
-                        <div>UPI ID: <span className="font-mono font-bold text-slate-950">{storeInfo.upiId}</span></div>
-                      </div>
+                            {/* Line Items Table (Light Clean Table Header) */}
+                            <table className="w-full border-collapse border border-slate-300 text-left mb-4 text-[11px]">
+                              <thead>
+                                <tr className="bg-slate-100 text-slate-900 text-[10px] uppercase font-bold border-y-2 border-slate-900">
+                                  <th className="p-1.5 border border-slate-300 text-center w-6">#</th>
+                                  <th className="p-1.5 border border-slate-300">Description of Goods</th>
+                                  <th className="p-1.5 border border-slate-300 text-center">HSN</th>
+                                  <th className="p-1.5 border border-slate-300 text-center">Qty</th>
+                                  <th className="p-1.5 border border-slate-300 text-right">Rate</th>
+                                  <th className="p-1.5 border border-slate-300 text-right">Disc%</th>
+                                  <th className="p-1.5 border border-slate-300 text-right">Taxable</th>
+                                  <th className="p-1.5 border border-slate-300 text-center">GST</th>
+                                  <th className="p-1.5 border border-slate-300 text-right">Amount (₹)</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {chunkRows.map((r, i) => {
+                                  const globalIdx = startItemIdx + i;
+                                  const t = calculateRowTotals(r);
+                                  return (
+                                    <tr key={i} className="border-b border-slate-300">
+                                      <td className="p-1.5 border border-slate-300 text-center font-mono">{globalIdx + 1}</td>
+                                      <td className="p-1.5 border border-slate-300 font-semibold text-slate-900">{r.itemName}</td>
+                                      <td className="p-1.5 border border-slate-300 text-center font-mono">{r.hsn}</td>
+                                      <td className="p-1.5 border border-slate-300 text-center font-bold">{r.qty} {r.unit}</td>
+                                      <td className="p-1.5 border border-slate-300 text-right font-mono">₹{t.sellingRate.toFixed(2)}</td>
+                                      <td className="p-1.5 border border-slate-300 text-right font-mono">{r.discountPercent}%</td>
+                                      <td className="p-1.5 border border-slate-300 text-right font-mono">₹{t.taxable.toFixed(2)}</td>
+                                      <td className="p-1.5 border border-slate-300 text-center font-mono">{r.gstPercent}%</td>
+                                      <td className="p-1.5 border border-slate-300 text-right font-bold font-mono text-slate-950">₹{t.lineTotal.toFixed(2)}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
 
-                      <div className="space-y-1 text-xs border border-slate-300 rounded p-3">
-                        <div className="flex justify-between text-slate-600"><span>Taxable Subtotal:</span><span className="font-mono">₹{summary.taxableSubtotal.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-slate-600"><span>CGST Total:</span><span className="font-mono">₹{summary.cgstTotal.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-slate-600"><span>SGST Total:</span><span className="font-mono">₹{summary.sgstTotal.toFixed(2)}</span></div>
-                        {summary.miscCharges > 0 && (
-                          <div className="flex justify-between text-slate-600"><span>Misc. / Transport Charges:</span><span className="font-mono">₹{summary.miscCharges.toFixed(2)}</span></div>
-                        )}
-                        <div className="flex justify-between text-slate-600"><span>Round Off:</span><span className="font-mono">₹{summary.roundOff.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-sm font-extrabold text-slate-950 pt-2 border-t border-slate-400"><span>GRAND TOTAL:</span><span className="font-mono">₹{summary.grandTotal.toFixed(2)}</span></div>
-                      </div>
-                    </div>
+                            {!isLastPage && (
+                              <div className="text-right text-[10px] text-slate-500 italic font-medium pt-1">
+                                (Continued on Page {pageIdx + 2}...)
+                              </div>
+                            )}
+                          </div>
 
-                    <div className="border border-slate-300 rounded p-2 mb-6 bg-slate-50 text-[11px]">
-                      <span className="font-bold text-slate-700">Amount in Words: </span>
-                      <span className="italic font-semibold text-slate-900">{numberToWordsIndian(summary.grandTotal)}</span>
-                    </div>
+                          {/* Footer Section: Financial Totals, Words, Terms & Signatory ONLY on Last Page */}
+                          <div>
+                            {isLastPage && (
+                              <>
+                                <div className="grid grid-cols-2 gap-4 items-start mb-4">
+                                  <div className="border border-slate-300 rounded p-3 bg-slate-50 text-[10px] space-y-1">
+                                    <div className="font-bold text-slate-700 uppercase">Bank & UPI Payment Details</div>
+                                    <div>Bank: <span className="font-semibold">{storeInfo.bankName}</span></div>
+                                    <div>A/c No: <span className="font-mono font-bold">{storeInfo.accountNo}</span></div>
+                                    <div>IFSC: <span className="font-mono">{storeInfo.ifsc}</span></div>
+                                    <div>UPI ID: <span className="font-mono font-bold text-slate-950">{storeInfo.upiId}</span></div>
+                                  </div>
 
-                    <div className="grid grid-cols-2 gap-4 items-end pt-4 border-t border-slate-300 text-[10px] text-slate-600">
-                      <div>
-                        <div className="font-bold text-slate-800 uppercase mb-0.5">Terms & Conditions:</div>
-                        <ul className="list-disc list-inside space-y-0.5 mb-2">
-                          {storeInfo.terms.map((t, idx) => <li key={idx}>{t}</li>)}
-                        </ul>
-                        <div className="text-[10px] text-slate-500 font-mono pt-1">Printed By: <span className="font-semibold text-slate-800">{currentUser ? (currentUser.name || currentUser.username) : "Staff Cashier"}</span></div>
-                      </div>
-                      <div className="text-right space-y-10">
-                        <div className="font-bold text-slate-800">For {storeInfo.name}</div>
-                        <div className="border-t border-slate-400 pt-1 font-semibold text-slate-900 inline-block px-6">Authorized Signatory</div>
-                      </div>
-                    </div>
+                                  <div className="space-y-1 text-xs border border-slate-300 rounded p-3">
+                                    <div className="flex justify-between text-slate-600"><span>Taxable Subtotal:</span><span className="font-mono">₹{summary.taxableSubtotal.toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-slate-600"><span>CGST Total:</span><span className="font-mono">₹{summary.cgstTotal.toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-slate-600"><span>SGST Total:</span><span className="font-mono">₹{summary.sgstTotal.toFixed(2)}</span></div>
+                                    {summary.miscCharges > 0 && (
+                                      <div className="flex justify-between text-slate-600"><span>Misc. / Transport Charges:</span><span className="font-mono">₹{summary.miscCharges.toFixed(2)}</span></div>
+                                    )}
+                                    <div className="flex justify-between text-slate-600"><span>Round Off:</span><span className="font-mono">₹{summary.roundOff.toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-sm font-extrabold text-slate-950 pt-2 border-t border-slate-400"><span>GRAND TOTAL:</span><span className="font-mono">₹{summary.grandTotal.toFixed(2)}</span></div>
+                                  </div>
+                                </div>
 
+                                <div className="border border-slate-300 rounded p-2 mb-4 bg-slate-50 text-[11px]">
+                                  <span className="font-bold text-slate-700">Amount in Words: </span>
+                                  <span className="italic font-semibold text-slate-900">{numberToWordsIndian(summary.grandTotal)}</span>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 items-end pt-3 border-t border-slate-300 text-[10px] text-slate-600">
+                                  <div>
+                                    <div className="font-bold text-slate-800 uppercase mb-0.5">Terms & Conditions:</div>
+                                    <ul className="list-disc list-inside space-y-0.5 mb-2">
+                                      {storeInfo.terms.map((t, idx) => <li key={idx}>{t}</li>)}
+                                    </ul>
+                                    <div className="text-[10px] text-slate-500 font-mono pt-1">Printed By: <span className="font-semibold text-slate-800">{currentUser ? (currentUser.name || currentUser.username) : "Staff Cashier"}</span></div>
+                                  </div>
+                                  <div className="text-right space-y-8">
+                                    <div className="font-bold text-slate-800">For {storeInfo.name}</div>
+                                    <div className="border-t border-slate-400 pt-1 font-semibold text-slate-900 inline-block px-6">Authorized Signatory</div>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+
+                            {/* Page Counter Indicator */}
+                            <div className="flex justify-between items-center text-[10px] text-slate-500 border-t border-slate-200 pt-2 mt-3 font-mono">
+                              <div>{storeInfo.name} • GSTIN: {storeInfo.gstin}</div>
+                              <div className="font-bold">Page {pageIdx + 1} of {totalPages}</div>
+                            </div>
+                          </div>
+
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
 
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* HISTORY MODAL WITH MULTI-FIELD SEARCH, DATE PICKER & STATS */}
           {isHistoryOpen && (() => {
@@ -3181,13 +3247,44 @@
                 {settingsTab === 'store' && (
                   <div className="p-5 overflow-y-auto flex-1 text-xs space-y-4">
                     <div className="space-y-3">
-                      <div><label className="block text-slate-400 mb-1 font-semibold">Store Name</label><input type="text" value={storeInfo.name} onChange={e => setStoreInfo({...storeInfo, name: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" /></div>
-                      <div><label className="block text-slate-400 mb-1 font-semibold">Address</label><input type="text" value={storeInfo.address} onChange={e => setStoreInfo({...storeInfo, address: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" /></div>
-                      <div><label className="block text-slate-400 mb-1 font-semibold">Phone Numbers</label><input type="text" value={storeInfo.phone} onChange={e => setStoreInfo({...storeInfo, phone: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" /></div>
-                      <div><label className="block text-slate-400 mb-1 font-semibold">GSTIN</label><input type="text" value={storeInfo.gstin} onChange={e => setStoreInfo({...storeInfo, gstin: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-mono" /></div>
+                      <div><label className="block text-slate-400 mb-1 font-semibold">Store Name</label><input type="text" value={storeInfo.name || "Sudama Hardware"} onChange={e => setStoreInfo({...storeInfo, name: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" /></div>
+                      <div><label className="block text-slate-400 mb-1 font-semibold">Address</label><input type="text" value={storeInfo.address || ""} onChange={e => setStoreInfo({...storeInfo, address: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" /></div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div><label className="block text-slate-400 mb-1 font-semibold">Phone Numbers</label><input type="text" value={storeInfo.phone || ""} onChange={e => setStoreInfo({...storeInfo, phone: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" /></div>
+                        <div><label className="block text-slate-400 mb-1 font-semibold">Store Email</label><input type="text" value={storeInfo.email || ""} onChange={e => setStoreInfo({...storeInfo, email: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" placeholder="e.g. billing@sudamahardware.com" /></div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div><label className="block text-slate-400 mb-1 font-semibold">GSTIN</label><input type="text" value={storeInfo.gstin || ""} onChange={e => setStoreInfo({...storeInfo, gstin: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-mono" /></div>
+                        <div><label className="block text-slate-400 mb-1 font-semibold">Store State (Code & Name)</label><input type="text" value={storeInfo.state || "23 (Madhya Pradesh)"} onChange={e => setStoreInfo({...storeInfo, state: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-mono" placeholder="e.g. 23 (Madhya Pradesh)" /></div>
+                      </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div><label className="block text-slate-400 mb-1 font-semibold">Bank Account No.</label><input type="text" value={storeInfo.accountNo} onChange={e => setStoreInfo({...storeInfo, accountNo: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-mono" /></div>
                         <div><label className="block text-slate-400 mb-1 font-semibold">Bank IFSC</label><input type="text" value={storeInfo.ifsc} onChange={e => setStoreInfo({...storeInfo, ifsc: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-mono" /></div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
+                        <div className="text-[11px] text-slate-400 italic">
+                          * Changes to address, state, phone & email apply instantly to all invoices.
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            localStorage.setItem('sudama_store', JSON.stringify(storeInfo));
+                            fetch('/api/store', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify(storeInfo)
+                            })
+                            .then(() => {
+                              if (window.confetti) confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
+                              alert("Store Profile settings saved successfully to disk!");
+                            })
+                            .catch(() => alert("Saved to local storage!"));
+                          }}
+                          className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-extrabold px-5 py-2.5 rounded-xl shadow-lg shadow-amber-500/20 text-xs flex items-center gap-1.5"
+                        >
+                          💾 Save Store Profile
+                        </button>
                       </div>
                     </div>
 
@@ -3395,8 +3492,8 @@
                   </div>
                 )}
 
-                <div className="p-3 border-t border-slate-800 bg-slate-950 flex justify-end">
-                  <button onClick={() => setIsSettingsOpen(false)} className="bg-amber-500 text-slate-950 font-bold px-4 py-1.5 rounded-lg shadow">
+                <div className="p-3.5 border-t border-slate-800 bg-slate-950 flex justify-end">
+                  <button onClick={() => setIsSettingsOpen(false)} className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow">
                     Close Settings
                   </button>
                 </div>

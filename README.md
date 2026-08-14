@@ -1,6 +1,6 @@
 # Sudama Hardware - Excel Invoice & GST Billing Suite (`hardware-inventory`)
 
-A fast, interactive, web-based Invoice & GST Billing application tailored specifically for **Sudama Hardware**. It enables shop owners, managers, and cashiers to generate, edit, print, and export hardware invoices using an Excel-style spreadsheet interface with hard disk data persistence, staff authentication, customer management, profit margin calculations, and sales analytics.
+A fast, interactive, web-based Microsoft Excel Invoice & GST Billing application tailored specifically for **Sudama Hardware**. It enables shop owners, managers, and cashiers to generate, edit, print, and export hardware invoices using an Excel-style spreadsheet interface with hard disk data persistence, staff authentication, customer management, profit margin calculations, and sales analytics.
 
 ---
 
