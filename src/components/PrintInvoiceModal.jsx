@@ -23,23 +23,22 @@ export default function PrintInvoiceModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay-bg bg-slate-950/85 backdrop-blur-md overflow-y-auto">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
-        
+
         {/* Modal Top Control Bar */}
         <div className="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-950 no-print">
           <div className="flex items-center gap-3">
             <h3 className="text-base font-bold text-white font-heading">
               Print & Preview Invoice ({invoiceNumber})
             </h3>
-            
+
             {/* Format Selection Pills */}
             <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-800">
               <button
                 onClick={() => setPrintFormat('a4')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition ${
-                  printFormat === 'a4'
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition ${printFormat === 'a4'
                     ? 'bg-amber-500 text-slate-950 font-bold'
                     : 'text-slate-400 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <FileText className="w-3.5 h-3.5" />
                 GST A4 Bill
@@ -47,11 +46,10 @@ export default function PrintInvoiceModal({
 
               <button
                 onClick={() => setPrintFormat('thermal')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition ${
-                  printFormat === 'thermal'
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition ${printFormat === 'thermal'
                     ? 'bg-amber-500 text-slate-950 font-bold'
                     : 'text-slate-400 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <Receipt className="w-3.5 h-3.5" />
                 80mm Receipt
@@ -59,11 +57,10 @@ export default function PrintInvoiceModal({
 
               <button
                 onClick={() => setPrintFormat('excel')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition ${
-                  printFormat === 'excel'
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition ${printFormat === 'excel'
                     ? 'bg-amber-500 text-slate-950 font-bold'
                     : 'text-slate-400 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <Table className="w-3.5 h-3.5" />
                 Excel Grid Print
@@ -90,13 +87,13 @@ export default function PrintInvoiceModal({
 
         {/* Live Preview Container (Prints cleanly) */}
         <div className="p-6 overflow-y-auto bg-slate-950 flex-1 flex justify-center">
-          
+
           {/* ========================================================
               FORMAT 1: GST A4 TAX INVOICE (Formal Hardware Bill)
              ======================================================== */}
           {printFormat === 'a4' && (
             <div className="a4-print-page bg-white text-slate-900 shadow-2xl rounded-none w-full max-w-[210mm] min-h-[297mm] p-8 border border-slate-300 font-sans text-xs">
-              
+
               {/* Invoice Header */}
               <div className="border-b-2 border-slate-900 pb-4 mb-4 flex justify-between items-start">
                 <div>
@@ -182,7 +179,7 @@ export default function PrintInvoiceModal({
 
               {/* Invoice Calculations & Payment QR Section */}
               <div className="grid grid-cols-2 gap-4 items-start mb-6">
-                
+
                 {/* Left: UPI Details & QR Code */}
                 <div className="border border-slate-300 rounded p-3 bg-slate-50 space-y-2">
                   <div className="text-[10px] text-slate-500 font-bold uppercase">Bank & UPI Payment Details</div>
@@ -192,7 +189,7 @@ export default function PrintInvoiceModal({
                     <div>IFSC: <span className="font-mono">{storeInfo.ifsc}</span></div>
                     <div>UPI ID: <span className="font-mono font-bold text-slate-950">{storeInfo.upiId}</span></div>
                   </div>
-                  
+
                   {/* Mock UPI QR Code Box */}
                   <div className="pt-2 flex items-center gap-2 border-t border-slate-200">
                     <div className="w-14 h-14 bg-white border border-slate-400 p-1 flex items-center justify-center rounded">
@@ -284,7 +281,7 @@ export default function PrintInvoiceModal({
               <div className="text-center font-bold text-[9px] mt-1">
                 GSTIN: {storeInfo.gstin}
               </div>
-              
+
               <div className="border-b border-dashed border-black my-2"></div>
 
               <div className="flex justify-between">

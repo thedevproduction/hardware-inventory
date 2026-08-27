@@ -2691,8 +2691,12 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
                                 <div className="grid grid-cols-2 gap-4 items-end pt-3 border-t border-slate-300 text-[10px] text-slate-600">
                                   <div>
                                     <div className="font-bold text-slate-800 uppercase mb-0.5">Terms & Conditions:</div>
-                                    <ul className="list-disc list-inside space-y-0.5 mb-2">
-                                      {storeInfo.terms.map((t, idx) => <li key={idx}>{t}</li>)}
+                                    <ul className="list-none space-y-0.5 mb-2">
+                                      {(storeInfo.terms || []).map((t, idx) => (
+                                        <li key={idx} className="text-slate-700 font-medium">
+                                          {t.match(/^\d+\./) ? t : `${idx + 1}. ${t}`}
+                                        </li>
+                                      ))}
                                     </ul>
                                     <div className="text-[10px] text-slate-500 font-mono pt-1">Printed By: <span className="font-semibold text-slate-800">{currentUser ? (currentUser.name || currentUser.username) : "Staff Cashier"}</span></div>
                                   </div>
