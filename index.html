@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sudama Hardware - Billing Invoice & GST Billing Suite</title>
-  <link rel="icon" type="image/svg+xml"
-    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23F59E0B'><path d='M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z'/></svg>" />
+  <title>Sudama Hardware - Excel Invoice & GST Billing Suite</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23F59E0B'><path d='M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z'/></svg>" />
 
   <!-- Offline Typography & Fonts -->
   <link rel="stylesheet" href="assets/css/fonts.css" />
@@ -52,23 +50,10 @@
 
   <style>
     /* Custom Scrollbars */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #0f172a;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #f59e0b;
-    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
 
     /* Excel Cell Inputs */
     .excel-cell-input {
@@ -80,7 +65,6 @@
       font-size: 0.875rem;
       transition: all 0.15s ease;
     }
-
     .excel-cell-input:focus {
       background-color: rgba(245, 158, 11, 0.12);
       border-color: #f59e0b;
@@ -102,18 +86,11 @@
 
     /* Print Styles */
     @media print {
-
-      .no-print,
-      header,
-      main,
-      nav,
-      button,
-      footer {
+      .no-print, header, main, nav, button, footer {
         display: none !important;
       }
 
-      html,
-      body {
+      html, body {
         background-color: #ffffff !important;
         background: #ffffff !important;
         color: #000000 !important;
@@ -132,9 +109,7 @@
         overflow: visible !important;
       }
 
-      .print-modal-overlay,
-      .print-modal-box,
-      .print-page-scroll-area {
+      .print-modal-overlay, .print-modal-box, .print-page-scroll-area {
         position: static !important;
         inset: auto !important;
         background: #ffffff !important;
@@ -178,7 +153,6 @@
     }
   </style>
 </head>
-
 <body class="bg-slate-950 text-slate-100 antialiased font-sans">
   <div id="root"></div>
 
@@ -199,7 +173,7 @@
     ];
 
     // --- DEFAULT HARDWARE DATA ---
-    const DEFAULT_STORE_INFO = {
+        const DEFAULT_STORE_INFO = {
       name: "Sudama Hardware",
       tagline: "Dealers in Pipes, Power Tools, Sanitaryware, Electrical & Building Hardware",
       address: "S R Tower bajnamath chowk, Madhya Pradesh 482003",
@@ -419,16 +393,28 @@
       const discPct = parseFloat(row.discountPercent) || 0;
       const gstPct = parseFloat(row.gstPercent) || 0;
 
-      // Effective selling rate after applying PP profit margin percentage on base rate
-      const sellingRate = baseRate * (1 + (ppPct / 100));
+      let lineTotal, taxable, totalGst, cgst, sgst, gross, discAmount, sellingRate;
 
-      const gross = qty * sellingRate;
-      const discAmount = gross * (discPct / 100);
-      const taxable = gross - discAmount;
-      const totalGst = taxable * (gstPct / 100);
-      const cgst = totalGst / 2;
-      const sgst = totalGst / 2;
-      const lineTotal = taxable + totalGst;
+      if (row.manualTotal !== undefined && row.manualTotal !== null && row.manualTotal !== "" && !isNaN(parseFloat(row.manualTotal))) {
+        lineTotal = parseFloat(row.manualTotal);
+        taxable = lineTotal / (1 + (gstPct / 100));
+        totalGst = lineTotal - taxable;
+        cgst = totalGst / 2;
+        sgst = totalGst / 2;
+        const discFactor = (1 - (discPct / 100)) > 0 ? (1 - (discPct / 100)) : 1;
+        gross = taxable / discFactor;
+        discAmount = gross - taxable;
+        sellingRate = (qty > 0) ? (gross / qty) : gross;
+      } else {
+        sellingRate = baseRate * (1 + (ppPct / 100));
+        gross = qty * sellingRate;
+        discAmount = gross * (discPct / 100);
+        taxable = gross - discAmount;
+        totalGst = taxable * (gstPct / 100);
+        cgst = totalGst / 2;
+        sgst = totalGst / 2;
+        lineTotal = taxable + totalGst;
+      }
 
       // Line item PP Profit total (Qty * Base Rate * PP%)
       const linePpProfit = qty * (baseRate * (ppPct / 100));
@@ -465,8 +451,8 @@
       rWS.forEach((row, index) => {
         const t = calculateRowTotals(row);
         excelData.push([
-          index + 1, row.itemName || "", row.hsn || "", Number(row.qty) || 0, row.unit || "Pcs",
-          Number(row.rate) || 0, Number(row.ppPercent) || 0, Number(row.discountPercent) || 0, t.taxable, Number(row.gstPercent) || 0,
+          index + 1, row.itemName || "", row.hsn || "", Number(row.qty)||0, row.unit || "Pcs",
+          Number(row.rate)||0, Number(row.ppPercent)||0, Number(row.discountPercent)||0, t.taxable, Number(row.gstPercent)||0,
           t.cgst, t.sgst, t.lineTotal
         ]);
       });
@@ -496,7 +482,7 @@
       XLSX.writeFile(workbook, `Sudama_Hardware_Invoice_${invoiceNumber.replace(/\//g, '-')}.xlsx`);
     }
 
-
+    
     // --- SEQUENTIAL INVOICE NUMBER HELPERS ---
     function extractInvoiceSeq(invStr) {
       if (!invStr) return 0;
@@ -579,15 +565,15 @@
         return c ? JSON.parse(c) : INITIAL_HARDWARE_CATALOG;
       });
 
-
-
+      
+      
       // --- FULL INTERACTIVE SAMPLE-DATA UI DEMO ENGINE (?demo=true) ---
       useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('demo') === 'true') {
           const runSampleDataDemo = async () => {
             const delay = ms => new Promise(r => setTimeout(r, ms));
-
+            
             // 0. Login Check
             if (!currentUser) {
               setLoginForm({ username: "hardware.sudama@gmail.com", password: "sudama@deep" });
@@ -799,33 +785,35 @@
         return vp ? JSON.parse(vp) : DEFAULT_VENDOR_PURCHASES;
       });
 
-
+      
       // Vendor Bill Document Attachment Viewer State
       const [viewingBillFile, setViewingBillFile] = useState(null);
 
       // Helper to generate Blob URL for PDF & Image Preview without Data URL security blocks
       const getBillBlobUrl = (billFile) => {
-        if (!billFile || !billFile.data) return null;
-        if (typeof billFile.data === 'string' && billFile.data.startsWith('blob:')) return billFile.data;
-        if (typeof billFile.data === 'string' && billFile.data.startsWith('[Stored')) return null;
-
-        try {
-          const dataStr = billFile.data;
-          const parts = dataStr.split(';base64,');
-          const mimeType = parts.length > 1 ? parts[0].replace('data:', '') : (billFile.type || 'application/pdf');
-          const base64Content = parts.length > 1 ? parts[1] : parts[0];
-          const byteCharacters = atob(base64Content);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        if (!billFile) return null;
+        if (billFile.url) return billFile.url;
+        if (billFile.path && !billFile.data) return '/' + billFile.path;
+        if (typeof billFile.data === 'string' && (billFile.data.startsWith('/') || billFile.data.startsWith('blob:'))) return billFile.data;
+        if (typeof billFile.data === 'string' && billFile.data.startsWith('data:')) {
+          try {
+            const parts = billFile.data.split(';base64,');
+            const mimeType = parts.length > 1 ? parts[0].replace('data:', '') : (billFile.type || 'application/pdf');
+            const base64Content = parts.length > 1 ? parts[1] : parts[0];
+            const byteCharacters = atob(base64Content);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: mimeType });
+            return URL.createObjectURL(blob);
+          } catch (err) {
+            console.error("Error creating Blob URL for bill preview:", err);
+            return billFile.data;
           }
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: mimeType });
-          return URL.createObjectURL(blob);
-        } catch (err) {
-          console.error("Error creating Blob URL for bill preview:", err);
-          return billFile.data;
         }
+        return null;
       };
 
 
@@ -845,13 +833,21 @@
           fetch('/api/vendor_purchases', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updated)
-          }).catch(err => console.error("Error saving bill file:", err));
+            body: JSON.stringify(updatedPurchases)
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.vendorPurchases) {
+              setVendorPurchases(data.vendorPurchases);
+              safeSetLocalStorage('sudama_vendor_purchases', data.vendorPurchases);
+            }
+          })
+          .catch(err => console.error("Error saving purchase record:", err));
         };
         reader.readAsDataURL(file);
       };
 
-      const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
       const [vendorTab, setVendorTab] = useState('purchases'); // 'purchases', 'vendors', 'compare'
       const [vendorSearch, setVendorSearch] = useState("");
       const [compareProductId, setCompareProductId] = useState("");
@@ -931,10 +927,18 @@
         safeSetLocalStorage('sudama_vendor_purchases', updatedPurchases);
 
         fetch('/api/vendor_purchases', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedPurchases)
-        }).catch(err => console.error("Error saving purchase record:", err));
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedPurchases)
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.vendorPurchases) {
+              setVendorPurchases(data.vendorPurchases);
+              safeSetLocalStorage('sudama_vendor_purchases', data.vendorPurchases);
+            }
+          })
+          .catch(err => console.error("Error saving purchase record:", err));
 
         setIsQuickPurchaseOpen(false);
 
@@ -987,7 +991,7 @@
               setVendorPurchases(data.vendorPurchases);
             }
 
-
+            
             if (typeof data.lastInvoiceSeq === 'number') {
               let maxSeq = data.lastInvoiceSeq;
               if (data.invoices && Array.isArray(data.invoices)) {
@@ -1015,7 +1019,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(customers)
-        }).catch(() => { });
+        }).catch(() => {});
       }, [customers]);
 
       // --- CUSTOMER AUTOCOMPLETE LOOKUP HANDLER ---
@@ -1054,7 +1058,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(users)
-        }).catch(() => { });
+        }).catch(() => {});
       }, [users]);
 
       useEffect(() => {
@@ -1063,7 +1067,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(storeInfo)
-        }).catch(() => { });
+        }).catch(() => {});
       }, [storeInfo]);
 
       useEffect(() => {
@@ -1072,7 +1076,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(catalog)
-        }).catch(() => { });
+        }).catch(() => {});
       }, [catalog]);
 
       useEffect(() => {
@@ -1081,15 +1085,15 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(savedInvoices)
-        }).catch(() => { });
+        }).catch(() => {});
       }, [savedInvoices]);
 
       // --- LOGIN HANDLER ---
       const handleLogin = (e) => {
         e.preventDefault();
         setLoginError("");
-        const user = users.find(u =>
-          u.username.trim().toLowerCase() === loginForm.username.trim().toLowerCase() &&
+        const user = users.find(u => 
+          u.username.trim().toLowerCase() === loginForm.username.trim().toLowerCase() && 
           u.password === loginForm.password
         );
 
@@ -1171,7 +1175,7 @@
       const currentInvoiceData = { customer, rows, summary, invoiceNumber, invoiceDate, dueDate, paymentMode, isIgst };
 
       // --- NEW BILLING ACTION ---
-
+      
       const handleNewBilling = () => {
         let highestSeq = lastInvoiceSeq;
         savedInvoices.forEach(inv => {
@@ -1216,7 +1220,52 @@
       // Row updates
       const updateRowField = (idx, field, value) => {
         const updated = [...rows];
-        updated[idx] = { ...updated[idx], [field]: value };
+        updated[idx] = { ...updated[idx], [field]: value, manualTotal: undefined };
+        setRows(updated);
+      };
+
+      const handleRowTotalOverride = (idx, inputVal) => {
+        const updated = [...rows];
+        const r = updated[idx];
+
+        if (inputVal === "" || inputVal === null) {
+          updated[idx] = { ...r, manualTotal: "" };
+          setRows(updated);
+          return;
+        }
+
+        const newTotal = parseFloat(inputVal);
+        if (isNaN(newTotal) || newTotal < 0) {
+          updated[idx] = { ...r, manualTotal: inputVal };
+          setRows(updated);
+          return;
+        }
+
+        const qty = parseFloat(r.qty) > 0 ? parseFloat(r.qty) : 1;
+        const gstPct = parseFloat(r.gstPercent) || 0;
+        const ppPct = parseFloat(r.ppPercent) || 0;
+        const discPct = parseFloat(r.discountPercent) || 0;
+
+        // Reverse Math: Taxable = Total / (1 + GST/100)
+        const targetTaxable = newTotal / (1 + (gstPct / 100));
+
+        // Gross = Taxable / (1 - Disc/100)
+        const discFactor = (1 - (discPct / 100)) > 0 ? (1 - (discPct / 100)) : 1;
+        const targetGross = targetTaxable / discFactor;
+
+        // Selling Rate = Gross / Qty
+        const targetSellingRate = targetGross / qty;
+
+        // Base Rate = Selling Rate / (1 + PP/100)
+        const targetBaseRate = targetSellingRate / (1 + (ppPct / 100));
+
+        const roundedBaseRate = Math.round(targetBaseRate * 10000) / 10000;
+
+        updated[idx] = {
+          ...r,
+          rate: roundedBaseRate > 0 ? roundedBaseRate : targetBaseRate,
+          manualTotal: inputVal
+        };
         setRows(updated);
       };
 
@@ -1229,7 +1278,7 @@
         setRows(rows.filter((_, i) => i !== idx));
       };
 
-
+      
       const handleSaveInvoice = () => {
         const currentSeq = extractInvoiceSeq(invoiceNumber);
         const record = { id: `inv-${Date.now()}`, ...currentInvoiceData };
@@ -1463,10 +1512,10 @@
             <div className="absolute bottom-10 right-10 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
             <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-8 shadow-2xl backdrop-blur-xl relative z-10 space-y-6">
-
+              
               <div className="text-center space-y-2">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-slate-950 font-bold shadow-xl shadow-amber-500/25 mx-auto">
-                  <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
+                  <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
                 </div>
                 <h1 className="text-2xl font-extrabold text-white tracking-wide font-heading">Sudama Hardware</h1>
                 <p className="text-xs text-slate-400 font-medium">Invoice Billing & GST Invoice Suite</p>
@@ -1487,7 +1536,7 @@
                       type="text"
                       required
                       value={loginForm.username}
-                      onChange={e => setLoginForm({ ...loginForm, username: e.target.value })}
+                      onChange={e => setLoginForm({...loginForm, username: e.target.value})}
                       placeholder="hardware.sudama@gmail.com"
                       className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl pl-9 pr-3 py-2.5 text-slate-100 placeholder-slate-600 outline-none text-xs transition"
                     />
@@ -1502,7 +1551,7 @@
                       type={showPassword ? "text" : "password"}
                       required
                       value={loginForm.password}
-                      onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
+                      onChange={e => setLoginForm({...loginForm, password: e.target.value})}
                       placeholder="••••••••"
                       className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl pl-9 pr-10 py-2.5 text-slate-100 placeholder-slate-600 outline-none text-xs font-mono transition"
                     />
@@ -1532,7 +1581,7 @@
       // --- MAIN APPLICATION VIEW ---
       return (
         <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-
+          
           <datalist id="sudama-catalog-datalist">
             {catalog.map(p => (
               <option key={p.id} value={p.name}>
@@ -1554,7 +1603,7 @@
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-amber-500/20 shrink-0">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
                 </div>
                 <div>
                   <h1 className="text-lg font-extrabold text-white tracking-wide font-heading whitespace-nowrap">{storeInfo.name}</h1>
@@ -1580,7 +1629,7 @@
                 <button onClick={() => setIsPrintOpen(true)} className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">Print Bill</button>
                 <button onClick={() => setIsHistoryOpen(true)} className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 font-semibold border border-slate-700">History ({savedInvoices.length})</button>
                 <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" title="Store & User Settings">⚙️</button>
-
+                
                 {/* Vertical Separator */}
                 <div className="h-6 w-px bg-slate-800 mx-1 self-center"></div>
 
@@ -1597,7 +1646,7 @@
 
           {/* Main Content Area */}
           <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6 no-print">
-
+            
             {/* Customer Details */}
             <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 shadow-xl backdrop-blur-md">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
@@ -1654,11 +1703,11 @@
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1 font-semibold">Mobile / Phone</label>
-                  <input type="text" value={customer.phone} onChange={e => setCustomer({ ...customer, phone: e.target.value })} placeholder="+91 98270 XXXXX" className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-slate-100 font-mono outline-none" />
+                  <input type="text" value={customer.phone} onChange={e => setCustomer({...customer, phone: e.target.value})} placeholder="+91 98270 XXXXX" className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-slate-100 font-mono outline-none" />
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1 font-semibold">Customer GSTIN</label>
-                  <input type="text" value={customer.gstin} onChange={e => setCustomer({ ...customer, gstin: e.target.value.toUpperCase() })} placeholder="22ABCDE1234F1Z5" className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-slate-100 font-mono uppercase outline-none" />
+                  <input type="text" value={customer.gstin} onChange={e => setCustomer({...customer, gstin: e.target.value.toUpperCase()})} placeholder="22ABCDE1234F1Z5" className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-slate-100 font-mono uppercase outline-none" />
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1 font-semibold">Invoice No.</label>
@@ -1666,7 +1715,7 @@
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-slate-400 mb-1 font-semibold">Site / Delivery Address</label>
-                  <input type="text" value={customer.address} onChange={e => setCustomer({ ...customer, address: e.target.value })} placeholder="Site address..." className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-slate-100 outline-none" />
+                  <input type="text" value={customer.address} onChange={e => setCustomer({...customer, address: e.target.value})} placeholder="Site address..." className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-slate-100 outline-none" />
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1 font-semibold">Bill Date</label>
@@ -1737,15 +1786,15 @@
                     {rows.map((row, idx) => {
                       const totals = calculateRowTotals(row);
                       const query = row.itemName.trim().toLowerCase();
-                      const matches = query.length > 0 ? catalog.filter(p =>
-                        p.name.toLowerCase().includes(query) ||
+                      const matches = query.length > 0 ? catalog.filter(p => 
+                        p.name.toLowerCase().includes(query) || 
                         p.hsn.includes(query)
                       ) : [];
 
                       return (
                         <tr key={row.id || idx} className="hover:bg-slate-800/40 transition">
                           <td className="p-2 text-center text-slate-500 font-mono bg-slate-950/40 border-r border-slate-800">{idx + 1}</td>
-
+                          
                           <td className="p-1.5 border-r border-slate-800">
                             <div className="flex items-center gap-1">
                               <input
@@ -1865,7 +1914,21 @@
                           </td>
                           <td className="p-2 border-r border-slate-800 text-right font-mono text-slate-400">₹{totals.cgst.toFixed(2)}</td>
                           <td className="p-2 border-r border-slate-800 text-right font-mono text-slate-400">₹{totals.sgst.toFixed(2)}</td>
-                          <td className="p-2 border-r border-slate-800 text-right font-mono font-bold text-amber-400 bg-amber-500/5">₹{totals.lineTotal.toFixed(2)}</td>
+                          <td className="p-1 border-r border-slate-800 text-right font-mono font-bold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 transition focus-within:bg-amber-950/50">
+                            <div className="flex items-center justify-end">
+                              <span className="text-amber-500/70 mr-0.5 text-xs font-semibold">₹</span>
+                              <input
+                                type="number"
+                                step="any"
+                                value={row.manualTotal !== undefined && row.manualTotal !== null && row.manualTotal !== "" ? row.manualTotal : totals.lineTotal.toFixed(2)}
+                                onChange={e => handleRowTotalOverride(idx, e.target.value)}
+                                
+                                placeholder="0.00"
+                                className="w-24 bg-transparent text-right font-mono font-extrabold text-amber-400 focus:text-amber-300 outline-none p-1 border border-transparent focus:border-amber-500/80 rounded transition"
+                                title="✏️ Editable Total: Type final price here to auto-adjust Rate, Taxable & GST!"
+                              />
+                            </div>
+                          </td>
                           <td className="p-1 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {row.itemName.trim().length > 0 && !catalog.some(p => p.name.toLowerCase() === row.itemName.trim().toLowerCase()) && (
@@ -1904,7 +1967,7 @@
                   <div className="flex justify-between text-slate-400"><span>Taxable Value:</span><span className="font-mono text-slate-200">₹{summary.taxableSubtotal.toFixed(2)}</span></div>
                   <div className="flex justify-between text-slate-400"><span>CGST Total:</span><span className="font-mono text-slate-200">₹{summary.cgstTotal.toFixed(2)}</span></div>
                   <div className="flex justify-between text-slate-400"><span>SGST Total:</span><span className="font-mono text-slate-200">₹{summary.sgstTotal.toFixed(2)}</span></div>
-
+                  
                   {/* Misc. / Transport Charges Input (Included in Net Payable & Print/PDF) */}
                   <div className="flex items-center justify-between text-slate-400 py-1 border-t border-slate-800/60">
                     <label className="font-semibold text-slate-300 text-xs">Misc. / Transport (₹):</label>
@@ -1921,7 +1984,7 @@
                   </div>
 
                   <div className="flex justify-between text-slate-400"><span>Round Off:</span><span className="font-mono text-slate-300">₹{summary.roundOff.toFixed(2)}</span></div>
-
+                  
                   {/* PP Total (Profit Margin) Masked with ***** and Toggle Button (EXCLUDED from Print/PDF) */}
                   <div className="flex items-center justify-between text-slate-400 pt-1.5 pb-0.5 border-t border-slate-800/80 no-print">
                     <div className="flex items-center gap-1.5">
@@ -1971,24 +2034,26 @@
           {isCatalogOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay-bg bg-slate-950/85 backdrop-blur-md">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-
+                
                 <div className="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-950">
                   <h3 className="font-bold text-white font-heading text-base flex items-center gap-2">
                     <span>⚡</span> Sudama Hardware Catalog Manager
                   </h3>
-
+                  
                   <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-800">
                     <button
                       onClick={() => setCatalogTab('browse')}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition ${catalogTab === 'browse' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
-                        }`}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                        catalogTab === 'browse' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                      }`}
                     >
                       Browse & Insert
                     </button>
                     <button
                       onClick={() => setCatalogTab('manage')}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition ${catalogTab === 'manage' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
-                        }`}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                        catalogTab === 'manage' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                      }`}
                     >
                       ⚙️ Manage Catalog ({filteredCatalog.length}/{catalog.length})
                     </button>
@@ -2014,10 +2079,11 @@
                       <button
                         key={cat}
                         onClick={() => setCatalogCategory(cat)}
-                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap transition ${catalogCategory === cat
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap transition ${
+                          catalogCategory === cat
                             ? 'bg-amber-500 text-slate-950 font-bold'
                             : 'bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700'
-                          }`}
+                        }`}
                       >
                         {cat}
                       </button>
@@ -2087,7 +2153,7 @@
                             required
                             placeholder="e.g. CPVC Ball Valve 1 Inch"
                             value={newProductForm.name}
-                            onChange={e => setNewProductForm({ ...newProductForm, name: e.target.value })}
+                            onChange={e => setNewProductForm({...newProductForm, name: e.target.value})}
                             className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 outline-none"
                           />
                         </div>
@@ -2096,7 +2162,7 @@
                           <label className="block text-slate-400 mb-1 font-semibold">Category</label>
                           <select
                             value={newProductForm.category}
-                            onChange={e => setNewProductForm({ ...newProductForm, category: e.target.value })}
+                            onChange={e => setNewProductForm({...newProductForm, category: e.target.value})}
                             className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 outline-none"
                           >
                             {["Plumbing", "Electrical", "Tools", "Fasteners", "Paints", "Hardware", "Sanitary", "General"].map(c => (
@@ -2111,7 +2177,7 @@
                             type="text"
                             placeholder="3917"
                             value={newProductForm.hsn}
-                            onChange={e => setNewProductForm({ ...newProductForm, hsn: e.target.value })}
+                            onChange={e => setNewProductForm({...newProductForm, hsn: e.target.value})}
                             className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 font-mono outline-none"
                           />
                         </div>
@@ -2123,7 +2189,7 @@
                             min="0"
                             step="any"
                             value={newProductForm.rate}
-                            onChange={e => setNewProductForm({ ...newProductForm, rate: e.target.value })}
+                            onChange={e => setNewProductForm({...newProductForm, rate: e.target.value})}
                             className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 font-mono outline-none"
                           />
                         </div>
@@ -2132,7 +2198,7 @@
                           <label className="block text-slate-400 mb-1 font-semibold">Unit</label>
                           <select
                             value={newProductForm.unit}
-                            onChange={e => setNewProductForm({ ...newProductForm, unit: e.target.value })}
+                            onChange={e => setNewProductForm({...newProductForm, unit: e.target.value})}
                             className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 outline-none"
                           >
                             {["Pcs", "Box", "Kg", "Mtr", "Pkt", "Set", "Tin", "Bucket", "Roll", "Pair", "Bundle", "SqFt", "Ltr"].map(u => (
@@ -2145,7 +2211,7 @@
                           <label className="block text-slate-400 mb-1 font-semibold">GST Rate %</label>
                           <select
                             value={newProductForm.gst}
-                            onChange={e => setNewProductForm({ ...newProductForm, gst: parseFloat(e.target.value) })}
+                            onChange={e => setNewProductForm({...newProductForm, gst: parseFloat(e.target.value)})}
                             className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 font-mono outline-none"
                           >
                             {[0, 5, 12, 18, 28].map(g => (
@@ -2182,7 +2248,7 @@
                                   <input
                                     type="text"
                                     value={p.name}
-                                    onChange={e => handleUpdateCatalogItem({ ...p, name: e.target.value })}
+                                    onChange={e => handleUpdateCatalogItem({...p, name: e.target.value})}
                                     className="bg-slate-950 border border-amber-500 rounded p-1 text-xs text-slate-100"
                                   />
                                   <div className="flex items-center gap-1">
@@ -2190,14 +2256,14 @@
                                     <input
                                       type="text"
                                       value={p.hsn}
-                                      onChange={e => handleUpdateCatalogItem({ ...p, hsn: e.target.value })}
+                                      onChange={e => handleUpdateCatalogItem({...p, hsn: e.target.value})}
                                       className="bg-slate-950 border border-amber-500 rounded p-1 text-xs text-slate-100 font-mono w-20"
                                     />
                                     <span className="text-[10px] text-slate-400">₹:</span>
                                     <input
                                       type="number"
                                       value={p.rate}
-                                      onChange={e => handleUpdateCatalogItem({ ...p, rate: parseFloat(e.target.value) || 0 })}
+                                      onChange={e => handleUpdateCatalogItem({...p, rate: parseFloat(e.target.value)||0})}
                                       className="bg-slate-950 border border-amber-500 rounded p-1 text-xs text-slate-100 font-mono w-20"
                                     />
                                   </div>
@@ -2268,26 +2334,28 @@
             return (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay-bg bg-slate-950/85 backdrop-blur-md">
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-
+                  
                   {/* Modal Header */}
                   <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
                     <div className="flex items-center gap-3">
                       <h3 className="font-bold text-white font-heading flex items-center gap-2 text-base">
                         <span>👥</span> Sudama Hardware Customers Catalog
                       </h3>
-
+                      
                       <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
                         <button
                           onClick={() => setCustomerTab('browse')}
-                          className={`px-3 py-1 rounded-lg font-bold transition ${customerTab === 'browse' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
-                            }`}
+                          className={`px-3 py-1 rounded-lg font-bold transition ${
+                            customerTab === 'browse' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                          }`}
                         >
                           🔍 Browse Customers ({customers.length})
                         </button>
                         <button
                           onClick={() => setCustomerTab('add')}
-                          className={`px-3 py-1 rounded-lg font-bold transition ${customerTab === 'add' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
-                            }`}
+                          className={`px-3 py-1 rounded-lg font-bold transition ${
+                            customerTab === 'add' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                          }`}
                         >
                           ➕ Add New Customer
                         </button>
@@ -2321,10 +2389,11 @@
                             <button
                               key={cat}
                               onClick={() => setCustomerTypeFilter(cat)}
-                              className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition ${customerTypeFilter === cat
+                              className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+                                customerTypeFilter === cat
                                   ? 'bg-amber-500 text-slate-950 font-bold shadow'
                                   : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700'
-                                }`}
+                              }`}
                             >
                               {cat}
                             </button>
@@ -2349,13 +2418,13 @@
                                       <input
                                         type="text"
                                         value={c.name}
-                                        onChange={e => setCustomers(customers.map(item => item.id === c.id ? { ...item, name: e.target.value } : item))}
+                                        onChange={e => setCustomers(customers.map(item => item.id === c.id ? {...item, name: e.target.value} : item))}
                                         placeholder="Customer Name"
                                         className="bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-100"
                                       />
                                       <select
                                         value={c.type}
-                                        onChange={e => setCustomers(customers.map(item => item.id === c.id ? { ...item, type: e.target.value } : item))}
+                                        onChange={e => setCustomers(customers.map(item => item.id === c.id ? {...item, type: e.target.value} : item))}
                                         className="bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-100"
                                       >
                                         <option value="Walk-in">Walk-in</option>
@@ -2366,7 +2435,7 @@
                                       <input
                                         type="text"
                                         value={c.phone}
-                                        onChange={e => setCustomers(customers.map(item => item.id === c.id ? { ...item, phone: e.target.value } : item))}
+                                        onChange={e => setCustomers(customers.map(item => item.id === c.id ? {...item, phone: e.target.value} : item))}
                                         placeholder="Phone Number"
                                         className="bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-100 font-mono"
                                       />
@@ -2375,14 +2444,14 @@
                                       <input
                                         type="text"
                                         value={c.gstin}
-                                        onChange={e => setCustomers(customers.map(item => item.id === c.id ? { ...item, gstin: e.target.value.toUpperCase() } : item))}
+                                        onChange={e => setCustomers(customers.map(item => item.id === c.id ? {...item, gstin: e.target.value.toUpperCase()} : item))}
                                         placeholder="Customer GSTIN (Optional)"
                                         className="bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-100 font-mono uppercase"
                                       />
                                       <input
                                         type="text"
                                         value={c.address}
-                                        onChange={e => setCustomers(customers.map(item => item.id === c.id ? { ...item, address: e.target.value } : item))}
+                                        onChange={e => setCustomers(customers.map(item => item.id === c.id ? {...item, address: e.target.value} : item))}
                                         placeholder="Delivery / Site Address"
                                         className="bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-100"
                                       />
@@ -2399,15 +2468,16 @@
                                   <div>
                                     <div className="flex items-center justify-between">
                                       <h4 className="font-bold text-slate-100 text-sm">{c.name}</h4>
-                                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${c.type === 'Contractor' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
-                                          c.type === 'Wholesale' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
-                                            c.type === 'Plumber/Electrician' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' :
-                                              'bg-slate-800 text-slate-300 border-slate-700'
-                                        }`}>
+                                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
+                                        c.type === 'Contractor' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                                        c.type === 'Wholesale' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
+                                        c.type === 'Plumber/Electrician' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' :
+                                        'bg-slate-800 text-slate-300 border-slate-700'
+                                      }`}>
                                         {c.type}
                                       </span>
                                     </div>
-
+                                    
                                     <div className="mt-1.5 space-y-0.5 text-[11px] text-slate-400">
                                       <div>Ph: <span className="text-slate-200 font-mono font-medium">{c.phone || 'N/A'}</span></div>
                                       <div>GSTIN: <span className="text-amber-300 font-mono">{c.gstin || 'N/A (Unregistered)'}</span></div>
@@ -2466,7 +2536,7 @@
                       alert(`Added "${newCust.name}" (${newCust.type}) to Customer Catalog!`);
                       setCustomerTab('browse');
                     }} className="p-6 overflow-y-auto flex-1 space-y-4 text-xs">
-
+                      
                       <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-xs">
                         💡 <strong>Tip:</strong> Adding customers to your catalog makes billing super fast! When creating a new bill, typing the customer's name will automatically fill their Mobile Number, GSTIN, and Site Address.
                       </div>
@@ -2478,7 +2548,7 @@
                             type="text"
                             required
                             value={newCustomerForm.name}
-                            onChange={e => setNewCustomerForm({ ...newCustomerForm, name: e.target.value })}
+                            onChange={e => setNewCustomerForm({...newCustomerForm, name: e.target.value})}
                             placeholder="e.g. Verma Construction or Rajesh Electrician"
                             className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-slate-100 placeholder-slate-600 outline-none text-xs"
                           />
@@ -2488,7 +2558,7 @@
                           <label className="block text-slate-300 font-semibold mb-1">Customer Type *</label>
                           <select
                             value={newCustomerForm.type}
-                            onChange={e => setNewCustomerForm({ ...newCustomerForm, type: e.target.value })}
+                            onChange={e => setNewCustomerForm({...newCustomerForm, type: e.target.value})}
                             className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-slate-100 font-semibold outline-none text-xs"
                           >
                             <option value="Walk-in">Walk-in Customer</option>
@@ -2503,7 +2573,7 @@
                           <input
                             type="text"
                             value={newCustomerForm.phone}
-                            onChange={e => setNewCustomerForm({ ...newCustomerForm, phone: e.target.value })}
+                            onChange={e => setNewCustomerForm({...newCustomerForm, phone: e.target.value})}
                             placeholder="+91 98270 XXXXX"
                             className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-slate-100 font-mono placeholder-slate-600 outline-none text-xs"
                           />
@@ -2516,7 +2586,7 @@
                           <input
                             type="text"
                             value={newCustomerForm.gstin}
-                            onChange={e => setNewCustomerForm({ ...newCustomerForm, gstin: e.target.value.toUpperCase() })}
+                            onChange={e => setNewCustomerForm({...newCustomerForm, gstin: e.target.value.toUpperCase()})}
                             placeholder="22ABCDE1234F1Z5"
                             className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-slate-100 font-mono uppercase placeholder-slate-600 outline-none text-xs"
                           />
@@ -2527,7 +2597,7 @@
                           <input
                             type="text"
                             value={newCustomerForm.address}
-                            onChange={e => setNewCustomerForm({ ...newCustomerForm, address: e.target.value })}
+                            onChange={e => setNewCustomerForm({...newCustomerForm, address: e.target.value})}
                             placeholder="Site No / Area / City..."
                             className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-slate-100 placeholder-slate-600 outline-none text-xs"
                           />
@@ -2547,7 +2617,7 @@
             );
           })()}
 
-          {/* PRINT PREVIEW MODAL WITH MULTI-PAGE PAGINATION & CLEAN LIGHT HEADERS */}
+                    {/* PRINT PREVIEW MODAL WITH MULTI-PAGE PAGINATION & CLEAN LIGHT HEADERS */}
           {isPrintOpen && (() => {
             const itemsPerPage = 18;
             const validRows = rows && rows.length > 0 ? rows : [];
@@ -2564,7 +2634,7 @@
             return (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 print-modal-overlay bg-slate-950/90 backdrop-blur-md overflow-y-auto">
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto print-modal-box">
-
+                  
                   {/* Modal Toolbar (Hidden during print) */}
                   <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950 no-print">
                     <div className="flex items-center gap-3">
@@ -2747,7 +2817,7 @@
           {/* HISTORY MODAL WITH MULTI-FIELD SEARCH, DATE PICKER & STATS */}
           {isHistoryOpen && (() => {
             const todayStr = new Date().toISOString().split('T')[0];
-
+            
             const yesterdayDate = new Date();
             yesterdayDate.setDate(yesterdayDate.getDate() - 1);
             const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
@@ -2760,7 +2830,7 @@
 
             const filteredInvoices = savedInvoices.filter(inv => {
               const invDate = inv.invoiceDate || "";
-
+              
               // 1. Check Date Filter Criteria
               let matchesDate = true;
               if (historyCustomDate) {
@@ -2797,7 +2867,7 @@
             return (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay-bg bg-slate-950/85 backdrop-blur-md">
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-
+                  
                   {/* Modal Header */}
                   <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
                     <h3 className="font-bold text-white font-heading flex items-center gap-2 text-base">
@@ -2808,7 +2878,7 @@
 
                   {/* Search Bar, Date Filters & Summary Stats Toolbar */}
                   <div className="p-3 border-b border-slate-800 bg-slate-950 flex flex-col gap-3">
-
+                    
                     {/* Row 1: Text Search & Live Revenue/Profit Stats */}
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                       <div className="relative w-full sm:w-80">
@@ -2835,7 +2905,7 @@
                     {/* Row 2: Date Quick-Filter Pills & Interactive Date Picker */}
                     <div className="flex flex-wrap items-center gap-2 text-xs pt-2 border-t border-slate-800/60">
                       <span className="text-slate-400 font-semibold text-[11px] flex items-center gap-1 mr-1">📅 Date Filter:</span>
-
+                      
                       {[
                         { id: 'all', label: 'All Time' },
                         { id: 'today', label: 'Today' },
@@ -2849,10 +2919,11 @@
                             setHistoryDateFilter(btn.id);
                             setHistoryCustomDate("");
                           }}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${historyDateFilter === btn.id && !historyCustomDate
+                          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
+                            historyDateFilter === btn.id && !historyCustomDate
                               ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
                               : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700'
-                            }`}
+                          }`}
                         >
                           {btn.label}
                         </button>
@@ -2990,12 +3061,12 @@
             );
           })()}
 
-
+          
           {/* VENDOR INVENTORY MANAGEMENT & PRICE COMPARISON MODAL */}
           {isVendorModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay-bg bg-slate-950/85 backdrop-blur-md">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-
+                
                 {/* Header & Tabs */}
                 <div className="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-950">
                   <div className="flex items-center gap-3">
@@ -3032,7 +3103,7 @@
                   {/* TAB 1: PURCHASE ENTRY */}
                   {vendorTab === 'purchases' && (
                     <div className="space-y-5">
-
+                      
                       {/* Purchase Form */}
                       <form onSubmit={handleSavePurchase} className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
                         <div className="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -3054,7 +3125,7 @@
                             <select
                               required
                               value={newPurchaseForm.vendorId}
-                              onChange={e => setNewPurchaseForm({ ...newPurchaseForm, vendorId: e.target.value })}
+                              onChange={e => setNewPurchaseForm({...newPurchaseForm, vendorId: e.target.value})}
                               className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 outline-none"
                             >
                               <option value="" disabled>-- Select Vendor --</option>
@@ -3095,7 +3166,7 @@
                               required
                               placeholder="e.g. 310"
                               value={newPurchaseForm.purchaseRate}
-                              onChange={e => setNewPurchaseForm({ ...newPurchaseForm, purchaseRate: e.target.value })}
+                              onChange={e => setNewPurchaseForm({...newPurchaseForm, purchaseRate: e.target.value})}
                               className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 font-mono outline-none"
                             />
                           </div>
@@ -3109,7 +3180,7 @@
                               min="0.01"
                               placeholder="1"
                               value={newPurchaseForm.quantity}
-                              onChange={e => setNewPurchaseForm({ ...newPurchaseForm, quantity: e.target.value })}
+                              onChange={e => setNewPurchaseForm({...newPurchaseForm, quantity: e.target.value})}
                               className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 font-mono outline-none"
                             />
                           </div>
@@ -3120,7 +3191,7 @@
                               type="text"
                               placeholder="e.g. SUP-INV-881"
                               value={newPurchaseForm.billNumber}
-                              onChange={e => setNewPurchaseForm({ ...newPurchaseForm, billNumber: e.target.value })}
+                              onChange={e => setNewPurchaseForm({...newPurchaseForm, billNumber: e.target.value})}
                               className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 font-mono outline-none"
                             />
                           </div>
@@ -3130,7 +3201,7 @@
                             <input
                               type="date"
                               value={newPurchaseForm.purchaseDate}
-                              onChange={e => setNewPurchaseForm({ ...newPurchaseForm, purchaseDate: e.target.value })}
+                              onChange={e => setNewPurchaseForm({...newPurchaseForm, purchaseDate: e.target.value})}
                               className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 font-mono outline-none"
                             />
                           </div>
@@ -3141,7 +3212,7 @@
                               type="text"
                               placeholder="e.g. Bulk lot discount rate"
                               value={newPurchaseForm.remarks}
-                              onChange={e => setNewPurchaseForm({ ...newPurchaseForm, remarks: e.target.value })}
+                              onChange={e => setNewPurchaseForm({...newPurchaseForm, remarks: e.target.value})}
                               className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 outline-none"
                             />
                           </div>
@@ -3282,7 +3353,7 @@
                   {/* TAB 2: VENDOR DIRECTORY */}
                   {vendorTab === 'vendors' && (
                     <div className="space-y-5">
-
+                      
                       {/* Vendor Form */}
                       <form onSubmit={handleSaveVendor} className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
                         <h4 className="font-bold text-amber-400 text-xs uppercase tracking-wider border-b border-slate-800 pb-1">
@@ -3297,7 +3368,7 @@
                               required
                               placeholder="e.g. Supreme Pipes Ltd"
                               value={newVendorForm.name}
-                              onChange={e => setNewVendorForm({ ...newVendorForm, name: e.target.value })}
+                              onChange={e => setNewVendorForm({...newVendorForm, name: e.target.value})}
                               className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 font-bold outline-none"
                             />
                           </div>
@@ -3308,7 +3379,7 @@
                               type="text"
                               placeholder="e.g. Rajesh Sharma"
                               value={newVendorForm.contactPerson}
-                              onChange={e => setNewVendorForm({ ...newVendorForm, contactPerson: e.target.value })}
+                              onChange={e => setNewVendorForm({...newVendorForm, contactPerson: e.target.value})}
                               className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 outline-none"
                             />
                           </div>
@@ -3319,7 +3390,7 @@
                               type="text"
                               placeholder="e.g. +91 98261 11223"
                               value={newVendorForm.phone}
-                              onChange={e => setNewVendorForm({ ...newVendorForm, phone: e.target.value })}
+                              onChange={e => setNewVendorForm({...newVendorForm, phone: e.target.value})}
                               className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 font-mono outline-none"
                             />
                           </div>
@@ -3330,7 +3401,7 @@
                               type="text"
                               placeholder="e.g. 22AAACS1234F1Z1"
                               value={newVendorForm.gstin}
-                              onChange={e => setNewVendorForm({ ...newVendorForm, gstin: e.target.value })}
+                              onChange={e => setNewVendorForm({...newVendorForm, gstin: e.target.value})}
                               className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 font-mono uppercase outline-none"
                             />
                           </div>
@@ -3341,7 +3412,7 @@
                               type="email"
                               placeholder="sales@vendor.com"
                               value={newVendorForm.email}
-                              onChange={e => setNewVendorForm({ ...newVendorForm, email: e.target.value })}
+                              onChange={e => setNewVendorForm({...newVendorForm, email: e.target.value})}
                               className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 outline-none"
                             />
                           </div>
@@ -3352,7 +3423,7 @@
                               type="text"
                               placeholder="Industrial Area, Raipur"
                               value={newVendorForm.address}
-                              onChange={e => setNewVendorForm({ ...newVendorForm, address: e.target.value })}
+                              onChange={e => setNewVendorForm({...newVendorForm, address: e.target.value})}
                               className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 outline-none"
                             />
                           </div>
@@ -3458,7 +3529,7 @@
 
                     return (
                       <div className="space-y-5">
-
+                        
                         {/* Product Selector Bar */}
                         <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
                           <label className="block font-bold text-amber-400 text-xs uppercase tracking-wider">
@@ -3597,24 +3668,26 @@
           {isSettingsOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay-bg bg-slate-950/85 backdrop-blur-md">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-
+                
                 {/* Modal Header & Tabs */}
                 <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
                   <div className="flex items-center gap-3">
                     <h3 className="font-bold text-white font-heading text-base">⚙️ Settings & Administration</h3>
-
+                    
                     <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
                       <button
                         onClick={() => setSettingsTab('store')}
-                        className={`px-3 py-1 rounded-lg font-bold transition ${settingsTab === 'store' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
-                          }`}
+                        className={`px-3 py-1 rounded-lg font-bold transition ${
+                          settingsTab === 'store' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                        }`}
                       >
                         🏪 Store Profile
                       </button>
                       <button
                         onClick={() => setSettingsTab('users')}
-                        className={`px-3 py-1 rounded-lg font-bold transition ${settingsTab === 'users' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
-                          }`}
+                        className={`px-3 py-1 rounded-lg font-bold transition ${
+                          settingsTab === 'users' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                        }`}
                       >
                         👥 User Accounts ({users.length})
                       </button>
@@ -3628,19 +3701,19 @@
                 {settingsTab === 'store' && (
                   <div className="p-5 overflow-y-auto flex-1 text-xs space-y-4">
                     <div className="space-y-3">
-                      <div><label className="block text-slate-400 mb-1 font-semibold">Store Name</label><input type="text" value={storeInfo.name || "Sudama Hardware"} onChange={e => setStoreInfo({ ...storeInfo, name: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" /></div>
-                      <div><label className="block text-slate-400 mb-1 font-semibold">Address</label><input type="text" value={storeInfo.address || ""} onChange={e => setStoreInfo({ ...storeInfo, address: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" /></div>
+                      <div><label className="block text-slate-400 mb-1 font-semibold">Store Name</label><input type="text" value={storeInfo.name || "Sudama Hardware"} onChange={e => setStoreInfo({...storeInfo, name: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" /></div>
+                      <div><label className="block text-slate-400 mb-1 font-semibold">Address</label><input type="text" value={storeInfo.address || ""} onChange={e => setStoreInfo({...storeInfo, address: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" /></div>
                       <div className="grid grid-cols-2 gap-3">
-                        <div><label className="block text-slate-400 mb-1 font-semibold">Phone Numbers</label><input type="text" value={storeInfo.phone || ""} onChange={e => setStoreInfo({ ...storeInfo, phone: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" /></div>
-                        <div><label className="block text-slate-400 mb-1 font-semibold">Store Email</label><input type="text" value={storeInfo.email || ""} onChange={e => setStoreInfo({ ...storeInfo, email: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" placeholder="e.g. billing@sudamahardware.com" /></div>
+                        <div><label className="block text-slate-400 mb-1 font-semibold">Phone Numbers</label><input type="text" value={storeInfo.phone || ""} onChange={e => setStoreInfo({...storeInfo, phone: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" /></div>
+                        <div><label className="block text-slate-400 mb-1 font-semibold">Store Email</label><input type="text" value={storeInfo.email || ""} onChange={e => setStoreInfo({...storeInfo, email: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100" placeholder="e.g. billing@sudamahardware.com" /></div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
-                        <div><label className="block text-slate-400 mb-1 font-semibold">GSTIN</label><input type="text" value={storeInfo.gstin || ""} onChange={e => setStoreInfo({ ...storeInfo, gstin: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-mono" /></div>
-                        <div><label className="block text-slate-400 mb-1 font-semibold">Store State (Code & Name)</label><input type="text" value={storeInfo.state || "23 (Madhya Pradesh)"} onChange={e => setStoreInfo({ ...storeInfo, state: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-mono" placeholder="e.g. 23 (Madhya Pradesh)" /></div>
+                        <div><label className="block text-slate-400 mb-1 font-semibold">GSTIN</label><input type="text" value={storeInfo.gstin || ""} onChange={e => setStoreInfo({...storeInfo, gstin: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-mono" /></div>
+                        <div><label className="block text-slate-400 mb-1 font-semibold">Store State (Code & Name)</label><input type="text" value={storeInfo.state || "23 (Madhya Pradesh)"} onChange={e => setStoreInfo({...storeInfo, state: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-mono" placeholder="e.g. 23 (Madhya Pradesh)" /></div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
-                        <div><label className="block text-slate-400 mb-1 font-semibold">Bank Account No.</label><input type="text" value={storeInfo.accountNo} onChange={e => setStoreInfo({ ...storeInfo, accountNo: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-mono" /></div>
-                        <div><label className="block text-slate-400 mb-1 font-semibold">Bank IFSC</label><input type="text" value={storeInfo.ifsc} onChange={e => setStoreInfo({ ...storeInfo, ifsc: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-mono" /></div>
+                        <div><label className="block text-slate-400 mb-1 font-semibold">Bank Account No.</label><input type="text" value={storeInfo.accountNo} onChange={e => setStoreInfo({...storeInfo, accountNo: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-mono" /></div>
+                        <div><label className="block text-slate-400 mb-1 font-semibold">Bank IFSC</label><input type="text" value={storeInfo.ifsc} onChange={e => setStoreInfo({...storeInfo, ifsc: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-mono" /></div>
                       </div>
 
                       <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
@@ -3656,11 +3729,11 @@
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify(storeInfo)
                             })
-                              .then(() => {
-                                if (window.confetti) confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
-                                alert("Store Profile settings saved successfully to disk!");
-                              })
-                              .catch(() => alert("Saved to local storage!"));
+                            .then(() => {
+                              if (window.confetti) confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
+                              alert("Store Profile settings saved successfully to disk!");
+                            })
+                            .catch(() => alert("Saved to local storage!"));
                           }}
                           className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-extrabold px-5 py-2.5 rounded-xl shadow-lg shadow-amber-500/20 text-xs flex items-center gap-1.5"
                         >
@@ -3730,7 +3803,7 @@
                 {/* TAB 2: USER ACCOUNTS & PASSWORD MANAGEMENT */}
                 {settingsTab === 'users' && (
                   <div className="p-5 overflow-y-auto flex-1 text-xs space-y-6">
-
+                    
                     {/* Add New User Account Form */}
                     <form onSubmit={handleAddUser} className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
                       <h4 className="font-bold text-amber-400 text-xs uppercase tracking-wider border-b border-slate-800 pb-1">
@@ -3744,7 +3817,7 @@
                             type="text"
                             placeholder="e.g. Ramesh Kumar"
                             value={newUserForm.name}
-                            onChange={e => setNewUserForm({ ...newUserForm, name: e.target.value })}
+                            onChange={e => setNewUserForm({...newUserForm, name: e.target.value})}
                             className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 outline-none"
                           />
                         </div>
@@ -3756,7 +3829,7 @@
                             required
                             placeholder="e.g. ramesh@sudamahardware.com"
                             value={newUserForm.username}
-                            onChange={e => setNewUserForm({ ...newUserForm, username: e.target.value })}
+                            onChange={e => setNewUserForm({...newUserForm, username: e.target.value})}
                             className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 outline-none"
                           />
                         </div>
@@ -3768,7 +3841,7 @@
                             required
                             placeholder="Enter password..."
                             value={newUserForm.password}
-                            onChange={e => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                            onChange={e => setNewUserForm({...newUserForm, password: e.target.value})}
                             className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 font-mono outline-none"
                           />
                         </div>
@@ -3777,7 +3850,7 @@
                           <label className="block text-slate-400 mb-1 font-semibold">Role</label>
                           <select
                             value={newUserForm.role}
-                            onChange={e => setNewUserForm({ ...newUserForm, role: e.target.value })}
+                            onChange={e => setNewUserForm({...newUserForm, role: e.target.value})}
                             className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 font-semibold outline-none"
                           >
                             <option value="Cashier">Cashier / Staff</option>
@@ -3804,7 +3877,7 @@
                           <label className="block text-slate-400 mb-1 font-semibold">Select User Account</label>
                           <select
                             value={changePassForm.userId}
-                            onChange={e => setChangePassForm({ ...changePassForm, userId: e.target.value })}
+                            onChange={e => setChangePassForm({...changePassForm, userId: e.target.value})}
                             className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 font-medium outline-none"
                           >
                             <option value="" disabled>-- Select User --</option>
@@ -3821,7 +3894,7 @@
                             required
                             placeholder="Enter new password..."
                             value={changePassForm.newPassword}
-                            onChange={e => setChangePassForm({ ...changePassForm, newPassword: e.target.value })}
+                            onChange={e => setChangePassForm({...changePassForm, newPassword: e.target.value})}
                             className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded p-2 text-slate-100 font-mono outline-none"
                           />
                         </div>
@@ -3846,8 +3919,9 @@
                             <div>
                               <div className="font-semibold text-slate-100 flex items-center gap-2">
                                 <span>{u.name || u.username}</span>
-                                <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold uppercase ${u.role === 'Admin' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-slate-800 text-slate-400'
-                                  }`}>
+                                <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold uppercase ${
+                                  u.role === 'Admin' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-slate-800 text-slate-400'
+                                }`}>
                                   {u.role}
                                 </span>
                               </div>
@@ -3881,7 +3955,7 @@
               </div>
             </div>
           )}
-
+          
 
           {/* QUICK VENDOR PURCHASE OVERLAY MODAL (DIRECT FROM CATALOG) */}
           {isQuickPurchaseOpen && quickPurchaseTarget && (
@@ -4001,7 +4075,7 @@
                     <select
                       required
                       value={quickPurchaseForm.vendorId}
-                      onChange={e => setQuickPurchaseForm({ ...quickPurchaseForm, vendorId: e.target.value })}
+                      onChange={e => setQuickPurchaseForm({...quickPurchaseForm, vendorId: e.target.value})}
                       className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-lg p-2 text-slate-100 outline-none"
                     >
                       <option value="">-- Select Registered Vendor --</option>
@@ -4020,7 +4094,7 @@
                         required
                         placeholder="e.g. 310"
                         value={quickPurchaseForm.purchaseRate}
-                        onChange={e => setQuickPurchaseForm({ ...quickPurchaseForm, purchaseRate: e.target.value })}
+                        onChange={e => setQuickPurchaseForm({...quickPurchaseForm, purchaseRate: e.target.value})}
                         className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-lg p-2 text-slate-100 font-mono outline-none"
                       />
                     </div>
@@ -4033,7 +4107,7 @@
                         required
                         min="1"
                         value={quickPurchaseForm.purchasedQty}
-                        onChange={e => setQuickPurchaseForm({ ...quickPurchaseForm, purchasedQty: e.target.value })}
+                        onChange={e => setQuickPurchaseForm({...quickPurchaseForm, purchasedQty: e.target.value})}
                         className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-lg p-2 text-slate-100 font-mono outline-none"
                       />
                     </div>
@@ -4046,7 +4120,7 @@
                         type="text"
                         placeholder="e.g. SUP-INV-881"
                         value={quickPurchaseForm.billNo}
-                        onChange={e => setQuickPurchaseForm({ ...quickPurchaseForm, billNo: e.target.value })}
+                        onChange={e => setQuickPurchaseForm({...quickPurchaseForm, billNo: e.target.value})}
                         className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-lg p-2 text-slate-100 font-mono uppercase outline-none"
                       />
                     </div>
@@ -4056,7 +4130,7 @@
                       <input
                         type="date"
                         value={quickPurchaseForm.purchaseDate}
-                        onChange={e => setQuickPurchaseForm({ ...quickPurchaseForm, purchaseDate: e.target.value })}
+                        onChange={e => setQuickPurchaseForm({...quickPurchaseForm, purchaseDate: e.target.value})}
                         className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-lg p-2 text-slate-100 outline-none"
                       />
                     </div>
@@ -4068,7 +4142,7 @@
                       type="text"
                       placeholder="e.g. Bulk lot discount rate from regional distributor"
                       value={quickPurchaseForm.remarks}
-                      onChange={e => setQuickPurchaseForm({ ...quickPurchaseForm, remarks: e.target.value })}
+                      onChange={e => setQuickPurchaseForm({...quickPurchaseForm, remarks: e.target.value})}
                       className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-lg p-2 text-slate-100 outline-none"
                     />
                   </div>
@@ -4199,5 +4273,4 @@
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
-
 </html>

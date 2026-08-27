@@ -1,6 +1,8 @@
 import http.server
 import socketserver
 import json
+import base64
+import mimetypes
 import os
 import re
 from urllib.parse import urlparse
@@ -11,6 +13,8 @@ DATA_DIR = os.path.join(BASE_DIR, 'data')
 
 # Ensure data directory exists on disk
 os.makedirs(DATA_DIR, exist_ok=True)
+BILLS_DIR = os.path.join(DATA_DIR, 'bills')
+os.makedirs(BILLS_DIR, exist_ok=True)
 
 INVOICES_FILE = os.path.join(DATA_DIR, 'invoices.json')
 CATALOG_FILE = os.path.join(DATA_DIR, 'catalog.json')
@@ -199,6 +203,60 @@ def get_last_invoice_seq():
     save_json(COUNTER_FILE, {'lastSeq': max_seq})
     return max_seq
 
+
+def process_and_save_vendor_purchases(purchases_data):
+    """
+    Extracts binary Base64 files from vendor purchase records,
+    saves them to data/bills/ physical files, and replaces inline Base64
+    data with lightweight file path linkages in vendor_purchases.json.
+    """
+    if not isinstance(purchases_data, list):
+        save_json(PURCHASES_FILE, purchases_data)
+        return purchases_data
+
+    cleaned_purchases = []
+    for item in purchases_data:
+        if isinstance(item, dict) and 'billFile' in item and isinstance(item['billFile'], dict):
+            bill = item['billFile']
+            data_str = bill.get('data', '')
+            if isinstance(data_str, str) and data_str.startswith('data:'):
+                try:
+                    header, b64_content = data_str.split(';base64,')
+                    mime_type = header.replace('data:', '')
+                    
+                    ext = '.pdf' if 'pdf' in mime_type else ('.png' if 'png' in mime_type else ('.jpg' if 'jpeg' in mime_type or 'jpg' in mime_type else '.bin'))
+                    record_id = item.get('id', 'bill_' + str(int(os.path.getmtime(PURCHASES_FILE) if os.path.exists(PURCHASES_FILE) else 0)))
+                    orig_name = bill.get('name', 'vendor_bill')
+                    clean_name = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', orig_name)
+                    if not clean_name.endswith(ext):
+                        clean_name += ext
+
+                    file_basename = f"{record_id}_{clean_name}"
+                    file_path = os.path.join(BILLS_DIR, file_basename)
+                    
+                    binary_bytes = base64.b64decode(b64_content)
+                    with open(file_path, 'wb') as bf:
+                        bf.write(binary_bytes)
+
+                    relative_path = f"data/bills/{file_basename}"
+                    file_url = f"/api/bills/{file_basename}"
+
+                    item['billFile'] = {
+                        'name': orig_name,
+                        'type': mime_type,
+                        'size': len(binary_bytes),
+                        'path': relative_path,
+                        'url': file_url
+                    }
+                    print(f"[DISK STORAGE] Extracted & saved bill file: {relative_path} ({len(binary_bytes)} bytes)")
+                except Exception as e:
+                    print(f"Error extracting bill document: {e}")
+
+        cleaned_purchases.append(item)
+
+    save_json(PURCHASES_FILE, cleaned_purchases)
+    return cleaned_purchases
+
 def save_json(filepath, data):
     try:
         with open(filepath, 'w', encoding='utf-8') as f:
@@ -221,6 +279,25 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path.startswith('/api/bills/'):
+            filename = os.path.basename(parsed.path)
+            filepath = os.path.join(BILLS_DIR, filename)
+            if os.path.exists(filepath):
+                mime_type, _ = mimetypes.guess_type(filepath)
+                if not mime_type:
+                    mime_type = 'application/pdf' if filename.endswith('.pdf') else 'application/octet-stream'
+                self.send_response(200)
+                self.send_header('Content-Type', mime_type)
+                self.send_header('Content-Length', str(os.path.getsize(filepath)))
+                self.end_headers()
+                with open(filepath, 'rb') as f:
+                    self.wfile.write(f.read())
+                return
+            else:
+                self.send_response(404)
+                self.end_headers()
+                return
+
         if parsed.path == '/api/data':
             data = {
                 'invoices': load_json(INVOICES_FILE, []),
@@ -309,11 +386,11 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         elif parsed.path == '/api/vendor_purchases':
-            save_json(PURCHASES_FILE, payload)
+            cleaned_data = process_and_save_vendor_purchases(payload)
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps({'status': 'ok', 'message': 'Vendor purchases saved to disk'}).encode('utf-8'))
+            self.wfile.write(json.dumps({'status': 'ok', 'message': 'Vendor purchases saved to disk', 'vendorPurchases': cleaned_data}).encode('utf-8'))
             return
 
         self.send_response(404)
@@ -322,6 +399,17 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
 class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     daemon_threads = True
     allow_reuse_address = True
+
+    # Automatic migration of existing Base64 bill documents in data/vendor_purchases.json
+    if os.path.exists(PURCHASES_FILE):
+        try:
+            existing_vp = load_json(PURCHASES_FILE, [])
+            has_b64 = any(isinstance(v, dict) and isinstance(v.get('billFile'), dict) and str(v['billFile'].get('data', '')).startswith('data:') for v in existing_vp)
+            if has_b64:
+                print("[DISK STORAGE] Migrating inline Base64 bill documents to physical files in data/bills/...")
+                process_and_save_vendor_purchases(existing_vp)
+        except Exception as err:
+            print(f"Error during bill migration: {err}")
 
 if __name__ == '__main__':
     print(f"Sudama Hardware Disk Server running on http://localhost:{PORT}")

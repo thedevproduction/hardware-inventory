@@ -1,5 +1,14 @@
 [
   {
+    "id": "prod-1787824002351",
+    "name": "Test product",
+    "category": "Paints",
+    "hsn": "3917",
+    "rate": 0,
+    "unit": "Pcs",
+    "gst": 18
+  },
+  {
     "id": "p1",
     "name": "CPVC Pipe 1\" (3 Meter)",
     "category": "Plumbing",
