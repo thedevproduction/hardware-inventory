@@ -1,6 +1,6 @@
 # Sudama Hardware - Excel Invoice & GST Billing Suite (`hardware-inventory`)
 
-A fast, interactive, web-based Microsoft Excel Invoice & GST Billing application tailored specifically for **Sudama Hardware**. It enables shop owners, managers, and cashiers to generate, edit, print, and export hardware invoices using an Excel-style spreadsheet interface with hard disk data persistence, staff authentication, customer management, profit margin calculations, and sales analytics.
+A fast, interactive, web-based Microsoft Excel Invoice & GST Billing application tailored specifically for **Sudama Hardware**. It enables shop owners, managers, and cashiers to generate, edit, print, and export hardware invoices using an Excel-style spreadsheet interface with hard disk data persistence, staff authentication, customer management, vendor inventory tracking, direct catalog purchase recording, profit margin calculations, and sales analytics.
 
 ---
 
@@ -21,7 +21,7 @@ To run this application on a completely new computer (**macOS**, **Windows**, or
 ## 🚀 How to Run the Application
 
 ### Method 1: Using Hard Disk Storage Server (100% Risk-Free Persistent Storage)
-This is the **recommended method** to ensure all bills, catalog items, customer records, user accounts, and store settings are saved **directly as physical JSON files on your hard drive** (`data/invoices.json`, `data/catalog.json`, `data/customers.json`, `data/store_info.json`, `data/users.json`).
+This is the **recommended method** to ensure all bills, catalog items, customer records, vendor purchases, user accounts, and store settings are saved **directly as physical JSON files on your hard drive** (`data/invoices.json`, `data/catalog.json`, `data/customers.json`, `data/vendors.json`, `data/vendor_purchases.json`, `data/store_info.json`, `data/users.json`).
 
 1. Open Terminal / Command Prompt and navigate to the project folder:
    ```bash
@@ -73,7 +73,7 @@ This is the **recommended method** to ensure all bills, catalog items, customer 
   - 📁 `data/catalog.json` (Stores your custom hardware catalog items)
   - 📁 `data/customers.json` (Stores your registered customer directory)
   - 📁 `data/vendors.json` (Stores your registered hardware suppliers)
-  - 📁 `data/vendor_purchases.json` (Stores vendor purchase records & price history)
+  - 📁 `data/vendor_purchases.json` (Stores vendor purchase records, attached bills & price history)
   - 📁 `data/store_info.json` (Stores GSTIN, store address, bank & UPI handles)
   - 📁 `data/users.json` (Stores staff user accounts & credentials)
 - Real-time automatic synchronization on every save, add, edit, or delete action.
@@ -100,13 +100,30 @@ This is the **recommended method** to ensure all bills, catalog items, customer 
 - **Native Browser Datalist**: Shows non-clipped suggestions directly below the input cell.
 - **`⚡ Fill` Quick Chips**: Clickable amber suggestion chips pop up inside the line item cell for 1-click auto-filling of Item Name, HSN Code, Price (₹), Unit, and GST %.
 
-### 8. 🛠️ Extended Product Catalog Manager
+### 8. 🛠️ Extended Product Catalog Manager & Direct Purchase Recording
 - Click **`⚡ Catalog`** in the top navigation bar.
 - **Search Bar & Category Filters**: Filter items by hardware name, HSN code, or category pills (`All`, `Plumbing`, `Electrical`, `Tools`, `Fasteners`, `Paints`, `Hardware`, `Sanitary`).
 - **Add Product**: Form to insert new products into the catalog with custom rate, unit, and GST %.
 - **Edit (✏️) & Delete (🗑️)**: Modify prices or remove outdated hardware items permanently.
+- **📦 Direct "Record Purchase" / "Stock In"**: Click **`📦 Record Purchase`** (in *Browse & Insert* tab) or **`📦 Stock In`** (in *Manage Catalog* tab) next to any product to instantly open the **Record Vendor Purchase Entry** overlay!
 
-### 9. 📜 Multi-Field Invoice History Search & Date Picker
+### 9. 🏭 Vendor Inventory, Direct Purchase Recording & Price Intelligence
+- Access via **`🏭 Vendors`** in the top navigation bar.
+- **Purchase Entry Tab**: Record incoming stock purchases from suppliers with Purchase Rate, Quantity, Bill Number, Purchase Date, Trade Discount Notes, and Attached Bill Documents.
+- **📊 Real-Time Vendor Price Intelligence**:
+  - Whenever recording a vendor purchase, the overlay modal automatically displays 3 live decision-support cards:
+    - 🕒 **Last Purchase**: Cost price paid, date, and vendor name for the item.
+    - 🟢 **Best Deal (Lowest Rate)**: Vendor who offered the lowest cost price historically.
+    - 🔴 **Max Rate (Highest Rate)**: Vendor who charged the maximum cost price historically.
+- **📎 Vendor Bill Document Attachment & Lightbox Preview**:
+  - Attach PDF invoices (`.pdf`) or images (`.jpeg`, `.png`, `.webp`) when recording stock purchases.
+  - Dedicated **`Bill Document`** column in the purchase records table with **`📄 View Bill`** / **`📎 + Attach`** buttons.
+  - Opens a full-screen **Vendor Bill Document Preview** modal featuring an interactive HTML5 `<object>`/`<embed>` PDF viewer and image lightbox preview, complete with an **`📥 Download File`** button.
+  - **Quota-Safe Storage**: `safeSetLocalStorage` automatically falls back to physical disk server files (`data/vendor_purchases.json`) if browser storage limits are reached, guaranteeing zero crashes.
+- **🏢 Vendor Directory**: Manage supplier profiles (Name, Contact Person, Phone, GSTIN, Email, Address).
+- **📊 Compare Prices ⚡**: View side-by-side supplier cost price comparisons for any hardware product in your catalog.
+
+### 10. 📜 Multi-Field Invoice History Search & Date Picker
 - Click **`History`** in the top navigation bar.
 - **Multi-Field Search Bar**: Instant search across Invoice Number, Customer Name, Phone, GSTIN, Payment Mode, or Line Items inside the bill.
 - **Date Quick-Filter Pills**: 1-click filter by `All Time`, `Today`, `Yesterday`, `This Week`, `This Month`.
@@ -114,15 +131,15 @@ This is the **recommended method** to ensure all bills, catalog items, customer 
 - **Real-Time Revenue Stats**: Displays live Total Bills count, Revenue Sum (₹), and Total Profit (PP) for filtered search results.
 - **History Actions**: `📋 Load` bill back into Excel grid for revisions, `📥 Excel` download, `🖨️ Print` tax invoice, or `🗑️ Delete`.
 
-### 10. 📄 Multi-Format Printing & Staff Audit User Tracking
+### 11. 📄 Multi-Format Printing & Staff Audit User Tracking
 - **Clean Blank Customer Printing**: If no customer details are typed, the printed invoice completely hides `BILLED TO:`, `Walk-in Cash Customer`, and `Counter Sale` text, producing a clean itemized receipt!
 - **Staff User Audit (`Billed By`)**: Displays **`Billed By: {User Name}`** on the printed invoice header and footer so management can instantly track which cashier generated/printed each bill.
 - **Single-Page GST A4 Tax Invoice**: Formal A4 tax invoice with store letterhead, Bank details, UPI QR code, line-item tax breakdown, Terms & Conditions, and Signatory box. Strictly constrained to 1 single page without extra blank pages.
 - **Dynamic PDF Filename**: Saving as PDF automatically pre-fills filename with invoice number and date (e.g., `Sudama_Hardware_Invoice_SH-2026-27-9470_2026-08-09.pdf`).
 - **Native Microsoft Excel Export (`.xlsx`)**: Export invoices to formatted `.xlsx` spreadsheets using SheetJS.
 
-### 11. 📦 1-Click Database Backup & Restore
-- Click **`⚙️ Settings`** -> **`📥 Download JSON Backup`** to download a single backup file containing all invoices, hardware catalog, customers, user accounts, and settings.
+### 12. 📦 1-Click Database Backup & Restore
+- Click **`⚙️ Settings`** -> **`📥 Download JSON Backup`** to download a single backup file containing all invoices, hardware catalog, customers, vendor purchases, user accounts, and settings.
 - Click **`📤 Restore Backup File`** to upload and restore your entire store database anytime.
 
 ---
@@ -140,6 +157,8 @@ hardware-inventory/
 │   ├── invoices.json             # Saved billing registers
 │   ├── catalog.json              # Hardware product catalog
 │   ├── customers.json            # Customer directory catalog
+│   ├── vendors.json              # Hardware suppliers directory
+│   ├── vendor_purchases.json     # Vendor purchase records & bill document attachments
 │   ├── store_info.json           # Store settings & GSTIN profile
 │   └── users.json                # User accounts & credentials
 └── src/
