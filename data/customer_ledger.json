@@ -1,0 +1,57 @@
+[
+  {
+    "id": "ledg-1788524041956",
+    "customerId": "c1",
+    "customerName": "Ramesh Construction & Builders",
+    "customerPhone": "+91 98270 44551",
+    "date": "2026-09-02",
+    "receiveType": "Cash",
+    "refNo": "",
+    "creditAmount": 69,
+    "remarks": "",
+    "paymentFile": {
+      "name": "Cash_Ramesh_Construction__Builders_2026-09-02_image_915ef83d.png",
+      "type": "image/png",
+      "size": 1359821,
+      "path": "data/ledger/Cash_Ramesh_Construction__Builders_2026-09-02_image_915ef83d.png",
+      "url": "/api/ledger_files/Cash_Ramesh_Construction__Builders_2026-09-02_image_915ef83d.png"
+    },
+    "createdAt": "2026-09-04T12:14:01.956Z"
+  },
+  {
+    "id": "ledg-1788523826335",
+    "customerId": "c1",
+    "customerName": "Ramesh Construction & Builders",
+    "customerPhone": "+91 98270 44551",
+    "date": "2026-09-02",
+    "receiveType": "UPI",
+    "refNo": "",
+    "creditAmount": 550,
+    "remarks": "",
+    "createdAt": "2026-09-04T12:10:26.335Z"
+  },
+  {
+    "id": "ledg-1788523446692",
+    "customerId": "c1",
+    "customerName": "Ramesh Construction & Builders",
+    "customerPhone": "+91 98270 44551",
+    "date": "2026-09-04",
+    "receiveType": "Cash",
+    "refNo": "",
+    "creditAmount": 4000,
+    "remarks": "",
+    "createdAt": "2026-09-04T12:04:06.692Z"
+  },
+  {
+    "id": "ledg-1",
+    "customerId": "c1",
+    "customerName": "Ramesh Construction & Builders",
+    "customerPhone": "+91 98270 44551",
+    "date": "2026-08-15",
+    "receiveType": "Cheque",
+    "refNo": "19200",
+    "creditAmount": 5000,
+    "remarks": "Part Payment against Site Bill",
+    "createdAt": "2026-08-15T10:30:00.000Z"
+  }
+]

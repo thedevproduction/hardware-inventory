@@ -17,6 +17,8 @@ BILLS_DIR = os.path.join(DATA_DIR, 'bills')
 os.makedirs(BILLS_DIR, exist_ok=True)
 QUOTATIONS_DIR = os.path.join(DATA_DIR, 'quotations_pdf')
 os.makedirs(QUOTATIONS_DIR, exist_ok=True)
+LEDGER_FILES_DIR = os.path.join(DATA_DIR, 'ledger')
+os.makedirs(LEDGER_FILES_DIR, exist_ok=True)
 
 INVOICES_FILE = os.path.join(DATA_DIR, 'invoices.json')
 QUOTATIONS_FILE = os.path.join(DATA_DIR, 'quotations.json')
@@ -29,9 +31,25 @@ PURCHASES_FILE = os.path.join(DATA_DIR, 'vendor_purchases.json')
 COUNTER_FILE = os.path.join(DATA_DIR, 'invoice_counter.json')
 CATEGORIES_FILE = os.path.join(DATA_DIR, 'categories.json')
 UNITS_FILE = os.path.join(DATA_DIR, 'units.json')
+LEDGER_FILE = os.path.join(DATA_DIR, 'customer_ledger.json')
 
 DEFAULT_CATEGORIES = ["Plumbing", "Electrical", "Fasteners", "Tools", "Paints", "Sanitary", "Pipes & Fittings", "General Hardware"]
 DEFAULT_UNITS = ["Pcs", "Box", "Kg", "Mtr", "mtr", "Pkt", "Set", "Tin", "Bucket", "Roll", "Pair", "Bundle", "SqFt", "Ltr"]
+DEFAULT_CUSTOMER_LEDGER = [
+    {
+        "id": "ledg-1",
+        "customerId": "c1",
+        "customerName": "Ramesh Construction & Builders",
+        "customerPhone": "+91 98270 44551",
+        "date": "2026-08-15",
+        "receiveType": "Cheque",
+        "refNo": "19200",
+        "creditAmount": 5000.0,
+        "remarks": "Part Payment against Site Bill",
+        "createdAt": "2026-08-15T10:30:00.000Z"
+    }
+]
+
 
 DEFAULT_USERS = [
     {
@@ -266,6 +284,63 @@ def process_and_save_vendor_purchases(purchases_data):
     return cleaned_purchases
 
 
+
+def process_and_save_customer_ledger(ledger_data):
+    if not isinstance(ledger_data, list):
+        save_json(LEDGER_FILE, ledger_data)
+        return ledger_data
+
+    cleaned_entries = []
+    for item in ledger_data:
+        if isinstance(item, dict) and 'paymentFile' in item and isinstance(item['paymentFile'], dict):
+            pfile = item['paymentFile']
+            data_str = pfile.get('data', '')
+            if isinstance(data_str, str) and data_str.startswith('data:'):
+                try:
+                    header, b64_content = data_str.split(';base64,')
+                    mime_type = header.replace('data:', '')
+                    ext = '.pdf' if 'pdf' in mime_type else ('.png' if 'png' in mime_type else ('.jpg' if 'jpeg' in mime_type or 'jpg' in mime_type else '.bin'))
+                    
+                    cust_name = item.get('customerName', 'Customer')
+                    clean_cust = re.sub(r'[^a-zA-Z0-9]', '_', cust_name).strip('_')
+                    rcv_type = item.get('receiveType', 'Payment')
+                    ref_no = item.get('refNo', '').strip()
+                    clean_ref = re.sub(r'[^a-zA-Z0-9]', '_', ref_no) if ref_no else ''
+                    pdate = item.get('date', 'date')
+                    
+                    descriptive_prefix = f"{rcv_type}_{clean_ref}_{clean_cust}_{pdate}".replace('__', '_').strip('_')
+                    orig_name = pfile.get('name', 'document')
+                    clean_orig = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', orig_name)
+                    if not clean_orig.endswith(ext):
+                        clean_orig += ext
+
+                    file_basename = f"{descriptive_prefix}_{clean_orig}"
+                    file_path = os.path.join(LEDGER_FILES_DIR, file_basename)
+
+                    binary_bytes = base64.b64decode(b64_content)
+                    with open(file_path, 'wb') as lf:
+                        lf.write(binary_bytes)
+
+                    relative_path = f"data/ledger/{file_basename}"
+                    file_url = f"/api/ledger_files/{file_basename}"
+
+                    item['paymentFile'] = {
+                        'name': file_basename,
+                        'type': mime_type,
+                        'size': len(binary_bytes),
+                        'path': relative_path,
+                        'url': file_url
+                    }
+                    print(f"[DISK STORAGE] Saved customer ledger document: {relative_path} ({len(binary_bytes)} bytes)")
+                except Exception as e:
+                    print(f"Error saving customer ledger document: {e}")
+
+        cleaned_entries.append(item)
+
+    save_json(LEDGER_FILE, cleaned_entries)
+    return cleaned_entries
+
+
 def process_and_save_quotations(quotations_data):
     if not isinstance(quotations_data, list):
         save_json(QUOTATIONS_FILE, quotations_data)
@@ -333,6 +408,25 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path.startswith('/api/ledger_files/'):
+            filename = os.path.basename(parsed.path)
+            filepath = os.path.join(LEDGER_FILES_DIR, filename)
+            if os.path.exists(filepath):
+                mime_type, _ = mimetypes.guess_type(filepath)
+                if not mime_type:
+                    mime_type = 'application/pdf' if filename.endswith('.pdf') else ('image/png' if filename.endswith('.png') else 'application/octet-stream')
+                self.send_response(200)
+                self.send_header('Content-Type', mime_type)
+                self.send_header('Content-Length', str(os.path.getsize(filepath)))
+                self.end_headers()
+                with open(filepath, 'rb') as f:
+                    self.wfile.write(f.read())
+                return
+            else:
+                self.send_response(404)
+                self.end_headers()
+                return
+
         if parsed.path.startswith('/api/bills/'):
             filename = os.path.basename(parsed.path)
             filepath = os.path.join(BILLS_DIR, filename)
@@ -364,6 +458,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                 'vendorPurchases': load_json(PURCHASES_FILE, DEFAULT_VENDOR_PURCHASES),
                 'categories': load_json(CATEGORIES_FILE, DEFAULT_CATEGORIES),
                 'units': load_json(UNITS_FILE, DEFAULT_UNITS),
+                'customerLedger': load_json(LEDGER_FILE, DEFAULT_CUSTOMER_LEDGER),
                 'lastInvoiceSeq': get_last_invoice_seq()
             }
             self.send_response(200)
@@ -429,6 +524,14 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({'status': 'ok', 'message': 'Categories saved to disk'}).encode('utf-8'))
+            return
+
+        elif parsed.path == '/api/customer_ledger':
+            cleaned_data = process_and_save_customer_ledger(payload)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'status': 'ok', 'message': 'Customer ledger saved to disk'}).encode('utf-8'))
             return
 
         elif parsed.path == '/api/units':
@@ -514,10 +617,24 @@ class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
         except Exception as err:
             print(f"Error during bill migration: {err}")
 
+if not os.path.exists(LEDGER_FILE):
+    save_json(LEDGER_FILE, DEFAULT_CUSTOMER_LEDGER)
+
 if not os.path.exists(CATEGORIES_FILE):
     save_json(CATEGORIES_FILE, DEFAULT_CATEGORIES)
 if not os.path.exists(UNITS_FILE):
     save_json(UNITS_FILE, DEFAULT_UNITS)
+
+    # Automatic migration of existing Base64 ledger documents in data/customer_ledger.json
+    if os.path.exists(LEDGER_FILE):
+        try:
+            existing_ledg = load_json(LEDGER_FILE, [])
+            has_b64 = any(isinstance(v, dict) and isinstance(v.get('paymentFile'), dict) and str(v['paymentFile'].get('data', '')).startswith('data:') for v in existing_ledg)
+            if has_b64:
+                print("[DISK STORAGE] Migrating inline Base64 ledger documents to physical files in data/ledger/...")
+                process_and_save_customer_ledger(existing_ledg)
+        except Exception as err:
+            print(f"Error during ledger migration: {err}")
 
 if __name__ == '__main__':
     print(f"Sudama Hardware Disk Server running on http://localhost:{PORT}")

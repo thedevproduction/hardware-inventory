@@ -129,7 +129,7 @@ export function importExcelToInvoice(file, onRowsLoaded) {
       const workbook = XLSX.read(data, { type: 'array' });
       const firstSheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheetName];
-
+      
       const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
       if (!jsonRows || jsonRows.length === 0) {
         alert("The selected Excel file appears to be empty.");
@@ -142,7 +142,7 @@ export function importExcelToInvoice(file, onRowsLoaded) {
 
       jsonRows.forEach((row, idx) => {
         if (!row || row.length === 0) return;
-
+        
         // Find header row or process standard row
         const rowStr = row.join(" ").toLowerCase();
         if (rowStr.includes("item") || rowStr.includes("description") || rowStr.includes("qty") || rowStr.includes("rate")) {
@@ -195,7 +195,7 @@ export function downloadExcelTemplate() {
   const headers = [
     ["S.No", "Item Description", "HSN Code", "Quantity", "Unit", "Rate (₹)", "Discount %", "GST %"]
   ];
-
+  
   const sampleItems = [
     [1, 'CPVC Pipe 1" (3 Meter)', "3917", 10, "Pcs", 380, 5, 18],
     [2, "Modular Copper Wire 2.5 sq mm", "8544", 2, "Roll", 2680, 10, 18],

@@ -1,5 +1,46 @@
 [
   {
+    "id": "inv-1788523486622",
+    "customer": {
+      "name": "Ramesh Construction & Builders",
+      "phone": "+91 98270 44551",
+      "gstin": "22BKPPS9910A1Z2",
+      "address": "Site No. 4, Shankar Nagar, Raipur, CG",
+      "placeOfSupply": "Raipur (22)"
+    },
+    "rows": [
+      {
+        "id": "r1",
+        "itemName": "Modular Copper Wire 2.5 sq mm (90m Roll)",
+        "hsn": "8544",
+        "qty": "10",
+        "unit": "Roll",
+        "rate": 2680,
+        "ppPercent": 0,
+        "discountPercent": 0,
+        "gstPercent": 18
+      }
+    ],
+    "summary": {
+      "grossSubtotal": 26800,
+      "discountTotal": 0,
+      "taxableSubtotal": 26800,
+      "cgstTotal": 2412,
+      "sgstTotal": 2412,
+      "igstTotal": 0,
+      "ppTotal": 0,
+      "miscCharges": 0,
+      "grandTotal": 31624,
+      "roundOff": 0
+    },
+    "invoiceNumber": "SH/2026-27/0005",
+    "invoiceDate": "2026-09-04",
+    "dueDate": "2026-09-18",
+    "paymentMode": "Cash Paid",
+    "isIgst": false,
+    "docType": "bill"
+  },
+  {
     "id": "inv-1788519764438",
     "customer": {
       "name": "",
