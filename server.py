@@ -15,8 +15,11 @@ DATA_DIR = os.path.join(BASE_DIR, 'data')
 os.makedirs(DATA_DIR, exist_ok=True)
 BILLS_DIR = os.path.join(DATA_DIR, 'bills')
 os.makedirs(BILLS_DIR, exist_ok=True)
+QUOTATIONS_DIR = os.path.join(DATA_DIR, 'quotations_pdf')
+os.makedirs(QUOTATIONS_DIR, exist_ok=True)
 
 INVOICES_FILE = os.path.join(DATA_DIR, 'invoices.json')
+QUOTATIONS_FILE = os.path.join(DATA_DIR, 'quotations.json')
 CATALOG_FILE = os.path.join(DATA_DIR, 'catalog.json')
 STORE_FILE = os.path.join(DATA_DIR, 'store_info.json')
 USERS_FILE = os.path.join(DATA_DIR, 'users.json')
@@ -24,6 +27,11 @@ CUSTOMERS_FILE = os.path.join(DATA_DIR, 'customers.json')
 VENDORS_FILE = os.path.join(DATA_DIR, 'vendors.json')
 PURCHASES_FILE = os.path.join(DATA_DIR, 'vendor_purchases.json')
 COUNTER_FILE = os.path.join(DATA_DIR, 'invoice_counter.json')
+CATEGORIES_FILE = os.path.join(DATA_DIR, 'categories.json')
+UNITS_FILE = os.path.join(DATA_DIR, 'units.json')
+
+DEFAULT_CATEGORIES = ["Plumbing", "Electrical", "Fasteners", "Tools", "Paints", "Sanitary", "Pipes & Fittings", "General Hardware"]
+DEFAULT_UNITS = ["Pcs", "Box", "Kg", "Mtr", "mtr", "Pkt", "Set", "Tin", "Bucket", "Roll", "Pair", "Bundle", "SqFt", "Ltr"]
 
 DEFAULT_USERS = [
     {
@@ -257,6 +265,52 @@ def process_and_save_vendor_purchases(purchases_data):
     save_json(PURCHASES_FILE, cleaned_purchases)
     return cleaned_purchases
 
+
+def process_and_save_quotations(quotations_data):
+    if not isinstance(quotations_data, list):
+        save_json(QUOTATIONS_FILE, quotations_data)
+        return quotations_data
+
+    cleaned = []
+    for item in quotations_data:
+        if isinstance(item, dict) and 'quotationPdf' in item and isinstance(item['quotationPdf'], dict):
+            q_file = item['quotationPdf']
+            data_str = q_file.get('data', '')
+            if isinstance(data_str, str) and data_str.startswith('data:'):
+                try:
+                    header, b64_content = data_str.split(';base64,')
+                    mime_type = header.replace('data:', '')
+                    ext = '.pdf' if 'pdf' in mime_type else '.bin'
+                    orig_name = q_file.get('name', 'quotation.pdf')
+                    clean_name = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', orig_name)
+                    if not clean_name.endswith(ext):
+                        clean_name += ext
+
+                    file_basename = f"{item.get('id', 'qt')}_{clean_name}"
+                    file_path = os.path.join(QUOTATIONS_DIR, file_basename)
+
+                    binary_bytes = base64.b64decode(b64_content)
+                    with open(file_path, 'wb') as qf:
+                        qf.write(binary_bytes)
+
+                    relative_path = f"data/quotations_pdf/{file_basename}"
+                    file_url = f"/api/quotations_pdf/{file_basename}"
+
+                    item['quotationPdf'] = {
+                        'name': orig_name,
+                        'type': mime_type,
+                        'size': len(binary_bytes),
+                        'path': relative_path,
+                        'url': file_url
+                    }
+                    print(f"[DISK STORAGE] Saved quotation PDF file: {relative_path}")
+                except Exception as e:
+                    print(f"Error extracting quotation PDF: {e}")
+        cleaned.append(item)
+
+    save_json(QUOTATIONS_FILE, cleaned)
+    return cleaned
+
 def save_json(filepath, data):
     try:
         with open(filepath, 'w', encoding='utf-8') as f:
@@ -301,12 +355,15 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
         if parsed.path == '/api/data':
             data = {
                 'invoices': load_json(INVOICES_FILE, []),
+                'quotations': load_json(QUOTATIONS_FILE, []),
                 'catalog': load_json(CATALOG_FILE, None),
                 'storeInfo': load_json(STORE_FILE, None),
                 'users': load_json(USERS_FILE, DEFAULT_USERS),
                 'customers': load_json(CUSTOMERS_FILE, DEFAULT_CUSTOMERS),
                 'vendors': load_json(VENDORS_FILE, DEFAULT_VENDORS),
                 'vendorPurchases': load_json(PURCHASES_FILE, DEFAULT_VENDOR_PURCHASES),
+                'categories': load_json(CATEGORIES_FILE, DEFAULT_CATEGORIES),
+                'units': load_json(UNITS_FILE, DEFAULT_UNITS),
                 'lastInvoiceSeq': get_last_invoice_seq()
             }
             self.send_response(200)
@@ -334,6 +391,52 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({'status': 'ok', 'message': 'Invoices saved to disk'}).encode('utf-8'))
+            return
+
+        elif parsed.path == '/api/quotations':
+            process_and_save_quotations(payload)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'status': 'ok', 'message': 'Quotations saved to disk in data/quotations.json'}).encode('utf-8'))
+            return
+
+        elif parsed.path == '/api/save-quotation-pdf':
+            filename = payload.get('filename', f"quotation_{int(os.path.getmtime(QUOTATIONS_FILE) if os.path.exists(QUOTATIONS_FILE) else 0)}.pdf")
+            clean_filename = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', filename)
+            if not clean_filename.endswith('.pdf'):
+                clean_filename += '.pdf'
+            b64_content = payload.get('pdfBase64', '')
+            if b64_content:
+                if ';base64,' in b64_content:
+                    _, b64_content = b64_content.split(';base64,')
+                pdf_bytes = base64.b64decode(b64_content)
+                file_path = os.path.join(QUOTATIONS_DIR, clean_filename)
+                with open(file_path, 'wb') as pdf_file:
+                    pdf_file.write(pdf_bytes)
+                relative_path = f"data/quotations_pdf/{clean_filename}"
+                file_url = f"/api/quotations_pdf/{clean_filename}"
+                print(f"[DISK STORAGE] Saved quotation PDF file to data/quotations_pdf/: {relative_path} ({len(pdf_bytes)} bytes)")
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'status': 'ok', 'path': relative_path, 'url': file_url}).encode('utf-8'))
+                return
+
+        elif parsed.path == '/api/categories':
+            save_json(CATEGORIES_FILE, payload)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'status': 'ok', 'message': 'Categories saved to disk'}).encode('utf-8'))
+            return
+
+        elif parsed.path == '/api/units':
+            save_json(UNITS_FILE, payload)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'status': 'ok', 'message': 'Units saved to disk'}).encode('utf-8'))
             return
 
         elif parsed.path == '/api/catalog':
@@ -410,6 +513,11 @@ class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 process_and_save_vendor_purchases(existing_vp)
         except Exception as err:
             print(f"Error during bill migration: {err}")
+
+if not os.path.exists(CATEGORIES_FILE):
+    save_json(CATEGORIES_FILE, DEFAULT_CATEGORIES)
+if not os.path.exists(UNITS_FILE):
+    save_json(UNITS_FILE, DEFAULT_UNITS)
 
 if __name__ == '__main__':
     print(f"Sudama Hardware Disk Server running on http://localhost:{PORT}")

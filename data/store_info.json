@@ -1,12 +1,13 @@
 {
   "name": "Sudama Hardware",
   "tagline": "Dealers in Pipes, Power Tools, Sanitaryware, Electrical & Building Hardware",
-  "address": "S R Tower Bajnamath Chowk, Madhya Pradesh 482003",
+  "address": "S R Tower bajnamath chowk, Madhya Pradesh 482003",
   "phone": "+91 98271 88990 / +91 771 4059911",
-  "email": "hardware.sudama@gmail.com",
+  "email": "billing@sudamahardware.com",
+  "state": "23 (Madhya Pradesh)",
   "gstin": "22AAACS8890A1Z5",
   "pan": "AAACS8890A",
-  "bankName": "HDFC Bank",
+  "bankName": "State Bank of India",
   "accountNo": "39880199201",
   "ifsc": "SBIN0001244",
   "branch": "Jabalpur Branch",
@@ -14,8 +15,7 @@
   "terms": [
     "1. Goods once sold will not be taken back or exchanged.",
     "2. Interest @ 18% p.a. will be charged if bill is not paid on due date.",
-    "3. Subject to Raipur Jurisdiction only.",
+    "3. Subject to Jabalpur Jurisdiction only.",
     "4. Guarantee/Warranty as per manufacturer policies."
-  ],
-  "state": "Jabalpur, Madhya Pradesh"
+  ]
 }

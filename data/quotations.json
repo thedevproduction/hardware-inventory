@@ -1,0 +1,52 @@
+[
+  {
+    "id": "qt-1788519746798",
+    "quotationNumber": "QT/2026-27/0003",
+    "quotationDate": "2026-09-04",
+    "docType": "quotation",
+    "customer": {
+      "name": "",
+      "phone": "",
+      "gstin": "",
+      "address": "",
+      "placeOfSupply": "Raipur (22)"
+    },
+    "customerType": "Walk-in",
+    "paymentMode": "Cash Paid",
+    "rows": [
+      {
+        "id": "r-1788518545915-1",
+        "itemName": "Modular Copper Wire 2.5 sq mm (90m Roll)",
+        "hsn": "8544",
+        "qty": "3",
+        "unit": "Roll",
+        "rate": 2680,
+        "ppPercent": 0,
+        "discountPercent": 0,
+        "gstPercent": 18
+      }
+    ],
+    "summary": {
+      "grossSubtotal": 8040,
+      "discountTotal": 0,
+      "taxableSubtotal": 8040,
+      "cgstTotal": 723.6,
+      "sgstTotal": 723.6,
+      "igstTotal": 0,
+      "ppTotal": 0,
+      "miscCharges": 0,
+      "grandTotal": 9487,
+      "roundOff": -0.2000000000007276
+    },
+    "miscCharges": 0,
+    "currentUser": {
+      "name": "Sudama Owner (Admin)",
+      "role": "Admin"
+    },
+    "createdAt": "2026-09-04T11:02:26.798Z",
+    "isArchived": true,
+    "status": "Converted to Bill",
+    "convertedToInvoiceNumber": "SH/2026-27/0004",
+    "convertedAt": "2026-09-04T11:02:44.439Z"
+  }
+]

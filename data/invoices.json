@@ -1,1 +1,169 @@
-[]
+[
+  {
+    "id": "inv-1788519764438",
+    "customer": {
+      "name": "",
+      "phone": "",
+      "gstin": "",
+      "address": "",
+      "placeOfSupply": "Raipur (22)"
+    },
+    "rows": [
+      {
+        "id": "r-1788518545915-1",
+        "itemName": "Modular Copper Wire 2.5 sq mm (90m Roll)",
+        "hsn": "8544",
+        "qty": "3",
+        "unit": "Roll",
+        "rate": 2680,
+        "ppPercent": 0,
+        "discountPercent": 0,
+        "gstPercent": 18
+      }
+    ],
+    "summary": {
+      "grossSubtotal": 8040,
+      "discountTotal": 0,
+      "taxableSubtotal": 8040,
+      "cgstTotal": 723.6,
+      "sgstTotal": 723.6,
+      "igstTotal": 0,
+      "ppTotal": 0,
+      "miscCharges": 0,
+      "grandTotal": 9487,
+      "roundOff": -0.2000000000007276
+    },
+    "invoiceNumber": "SH/2026-27/0004",
+    "invoiceDate": "2026-09-04",
+    "dueDate": "2026-09-18",
+    "paymentMode": "Cash Paid",
+    "isIgst": false,
+    "docType": "bill",
+    "convertedFromQuotation": "QT/2026-27/0003"
+  },
+  {
+    "id": "inv-1788518534611",
+    "customer": {
+      "name": "",
+      "phone": "",
+      "gstin": "",
+      "address": "",
+      "placeOfSupply": "Raipur (22)"
+    },
+    "rows": [
+      {
+        "id": "r-1788518133698-1",
+        "itemName": "Synthetic Enamel Paint Gloss White 4L",
+        "hsn": "3208",
+        "qty": "500",
+        "unit": "Bucket",
+        "rate": 1250,
+        "ppPercent": 0,
+        "discountPercent": 0,
+        "gstPercent": 28
+      }
+    ],
+    "summary": {
+      "grossSubtotal": 625000,
+      "discountTotal": 0,
+      "taxableSubtotal": 625000,
+      "cgstTotal": 87500.00000000001,
+      "sgstTotal": 87500.00000000001,
+      "igstTotal": 0,
+      "ppTotal": 0,
+      "miscCharges": 0,
+      "grandTotal": 800000,
+      "roundOff": 0
+    },
+    "invoiceNumber": "SH/2026-27/0003",
+    "invoiceDate": "2026-09-04",
+    "dueDate": "2026-09-18",
+    "paymentMode": "Cash Paid",
+    "isIgst": false,
+    "docType": "bill",
+    "convertedFromQuotation": "QT/2026-27/0002"
+  },
+  {
+    "id": "inv-1788517883795",
+    "customer": {
+      "name": "",
+      "phone": "",
+      "gstin": "",
+      "address": "",
+      "placeOfSupply": "Raipur (22)"
+    },
+    "rows": [
+      {
+        "id": "r-1788517529273-1",
+        "itemName": "Solvent Cement CPVC 250ml Tin",
+        "hsn": "3506",
+        "qty": 1,
+        "unit": "Tin",
+        "rate": 210,
+        "ppPercent": 0,
+        "discountPercent": 0,
+        "gstPercent": 18
+      }
+    ],
+    "summary": {
+      "grossSubtotal": 210,
+      "discountTotal": 0,
+      "taxableSubtotal": 210,
+      "cgstTotal": 18.9,
+      "sgstTotal": 18.9,
+      "igstTotal": 0,
+      "ppTotal": 0,
+      "miscCharges": 0,
+      "grandTotal": 248,
+      "roundOff": 0.19999999999998863
+    },
+    "invoiceNumber": "SH/2026-27/0002",
+    "invoiceDate": "2026-09-04",
+    "dueDate": "2026-09-18",
+    "paymentMode": "Cash Paid",
+    "isIgst": false,
+    "docType": "bill",
+    "convertedFromQuotation": "QT/2026-27/0001"
+  },
+  {
+    "id": "inv-1788517581088",
+    "customer": {
+      "name": "",
+      "phone": "",
+      "gstin": "",
+      "address": "",
+      "placeOfSupply": "Raipur (22)"
+    },
+    "rows": [
+      {
+        "id": "r-1788517529273-1",
+        "itemName": "Solvent Cement CPVC 250ml Tin",
+        "hsn": "3506",
+        "qty": 1,
+        "unit": "Tin",
+        "rate": 210,
+        "ppPercent": 0,
+        "discountPercent": 0,
+        "gstPercent": 18
+      }
+    ],
+    "summary": {
+      "grossSubtotal": 210,
+      "discountTotal": 0,
+      "taxableSubtotal": 210,
+      "cgstTotal": 18.9,
+      "sgstTotal": 18.9,
+      "igstTotal": 0,
+      "ppTotal": 0,
+      "miscCharges": 0,
+      "grandTotal": 248,
+      "roundOff": 0.19999999999998863
+    },
+    "invoiceNumber": "SH/2026-27/0001",
+    "invoiceDate": "2026-09-04",
+    "dueDate": "2026-09-18",
+    "paymentMode": "Cash Paid",
+    "isIgst": false,
+    "docType": "bill"
+  }
+]
