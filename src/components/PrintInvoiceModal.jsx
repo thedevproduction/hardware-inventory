@@ -146,6 +146,7 @@ export default function PrintInvoiceModal({
               {/* Items Table */}
               {(() => {
                 const hasAnyHsn = (rows || []).some(r => r.hsn && String(r.hsn).trim().length > 0);
+                const hasAnyDiscount = (rows || []).some(r => Number(r.discountPercent) > 0);
                 return (
                   <table className="w-full border-collapse print-table text-left mb-4">
                     <thead>
@@ -156,7 +157,7 @@ export default function PrintInvoiceModal({
                         <th className="p-2 border border-slate-900 text-center">Qty</th>
                         <th className="p-2 border border-slate-900 text-center">Unit</th>
                         <th className="p-2 border border-slate-900 text-right">Rate</th>
-                        <th className="p-2 border border-slate-900 text-right">Disc%</th>
+                        {hasAnyDiscount && <th className="p-2 border border-slate-900 text-right">Disc%</th>}
                         <th className="p-2 border border-slate-900 text-right">Taxable</th>
                         <th className="p-2 border border-slate-900 text-center">GST</th>
                         <th className="p-2 border border-slate-900 text-right">Amount (₹)</th>
@@ -173,7 +174,11 @@ export default function PrintInvoiceModal({
                             <td className="p-1.5 border border-slate-300 text-center font-bold">{r.qty}</td>
                             <td className="p-1.5 border border-slate-300 text-center">{r.unit}</td>
                             <td className="p-1.5 border border-slate-300 text-right font-mono">₹{parseFloat(r.rate).toFixed(2)}</td>
-                            <td className="p-1.5 border border-slate-300 text-right font-mono">{r.discountPercent}%</td>
+                            {hasAnyDiscount && (
+                              <td className="p-1.5 border border-slate-300 text-right font-mono">
+                                {Number(r.discountPercent) > 0 ? `${r.discountPercent}%` : ''}
+                              </td>
+                            )}
                             <td className="p-1.5 border border-slate-300 text-right font-mono">₹{totals.taxable.toFixed(2)}</td>
                             <td className="p-1.5 border border-slate-300 text-center font-mono">{r.gstPercent}%</td>
                             <td className="p-1.5 border border-slate-300 text-right font-bold font-mono text-slate-950">₹{totals.lineTotal.toFixed(2)}</td>
