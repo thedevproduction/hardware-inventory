@@ -144,41 +144,46 @@ export default function PrintInvoiceModal({
               </div>
 
               {/* Items Table */}
-              <table className="w-full border-collapse print-table text-left mb-4">
-                <thead>
-                  <tr className="bg-slate-900 text-white text-[10px] uppercase font-bold">
-                    <th className="p-2 border border-slate-900 text-center w-8">#</th>
-                    <th className="p-2 border border-slate-900">Description of Goods</th>
-                    <th className="p-2 border border-slate-900 text-center">HSN</th>
-                    <th className="p-2 border border-slate-900 text-center">Qty</th>
-                    <th className="p-2 border border-slate-900 text-center">Unit</th>
-                    <th className="p-2 border border-slate-900 text-right">Rate</th>
-                    <th className="p-2 border border-slate-900 text-right">Disc%</th>
-                    <th className="p-2 border border-slate-900 text-right">Taxable</th>
-                    <th className="p-2 border border-slate-900 text-center">GST</th>
-                    <th className="p-2 border border-slate-900 text-right">Amount (₹)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-300">
-                  {rows.map((r, i) => {
-                    const totals = calculateRowTotals(r);
-                    return (
-                      <tr key={r.id || i} className="text-[11px] text-slate-800">
-                        <td className="p-1.5 border border-slate-300 text-center font-mono">{i + 1}</td>
-                        <td className="p-1.5 border border-slate-300 font-semibold text-slate-900">{r.itemName}</td>
-                        <td className="p-1.5 border border-slate-300 text-center font-mono">{r.hsn}</td>
-                        <td className="p-1.5 border border-slate-300 text-center font-bold">{r.qty}</td>
-                        <td className="p-1.5 border border-slate-300 text-center">{r.unit}</td>
-                        <td className="p-1.5 border border-slate-300 text-right font-mono">₹{parseFloat(r.rate).toFixed(2)}</td>
-                        <td className="p-1.5 border border-slate-300 text-right font-mono">{r.discountPercent}%</td>
-                        <td className="p-1.5 border border-slate-300 text-right font-mono">₹{totals.taxable.toFixed(2)}</td>
-                        <td className="p-1.5 border border-slate-300 text-center font-mono">{r.gstPercent}%</td>
-                        <td className="p-1.5 border border-slate-300 text-right font-bold font-mono text-slate-950">₹{totals.lineTotal.toFixed(2)}</td>
+              {(() => {
+                const hasAnyHsn = (rows || []).some(r => r.hsn && String(r.hsn).trim().length > 0);
+                return (
+                  <table className="w-full border-collapse print-table text-left mb-4">
+                    <thead>
+                      <tr className="bg-slate-900 text-white text-[10px] uppercase font-bold">
+                        <th className="p-2 border border-slate-900 text-center w-8">#</th>
+                        <th className="p-2 border border-slate-900">Description of Goods</th>
+                        {hasAnyHsn && <th className="p-2 border border-slate-900 text-center">HSN</th>}
+                        <th className="p-2 border border-slate-900 text-center">Qty</th>
+                        <th className="p-2 border border-slate-900 text-center">Unit</th>
+                        <th className="p-2 border border-slate-900 text-right">Rate</th>
+                        <th className="p-2 border border-slate-900 text-right">Disc%</th>
+                        <th className="p-2 border border-slate-900 text-right">Taxable</th>
+                        <th className="p-2 border border-slate-900 text-center">GST</th>
+                        <th className="p-2 border border-slate-900 text-right">Amount (₹)</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-300">
+                      {rows.map((r, i) => {
+                        const totals = calculateRowTotals(r);
+                        return (
+                          <tr key={r.id || i} className="text-[11px] text-slate-800">
+                            <td className="p-1.5 border border-slate-300 text-center font-mono">{i + 1}</td>
+                            <td className="p-1.5 border border-slate-300 font-semibold text-slate-900">{r.itemName}</td>
+                            {hasAnyHsn && <td className="p-1.5 border border-slate-300 text-center font-mono">{r.hsn}</td>}
+                            <td className="p-1.5 border border-slate-300 text-center font-bold">{r.qty}</td>
+                            <td className="p-1.5 border border-slate-300 text-center">{r.unit}</td>
+                            <td className="p-1.5 border border-slate-300 text-right font-mono">₹{parseFloat(r.rate).toFixed(2)}</td>
+                            <td className="p-1.5 border border-slate-300 text-right font-mono">{r.discountPercent}%</td>
+                            <td className="p-1.5 border border-slate-300 text-right font-mono">₹{totals.taxable.toFixed(2)}</td>
+                            <td className="p-1.5 border border-slate-300 text-center font-mono">{r.gstPercent}%</td>
+                            <td className="p-1.5 border border-slate-300 text-right font-bold font-mono text-slate-950">₹{totals.lineTotal.toFixed(2)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                );
+              })()}
 
               {/* Invoice Calculations & Payment QR Section */}
               <div className="grid grid-cols-2 gap-4 items-start mb-6">

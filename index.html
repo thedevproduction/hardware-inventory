@@ -3986,6 +3986,7 @@ Click OK to proceed or Cancel to abort.`);
           {isPrintOpen && (() => {
             const itemsPerPage = 18;
             const validRows = rows && rows.length > 0 ? rows : [];
+            const hasAnyHsn = validRows.some(r => r.hsn && String(r.hsn).trim().length > 0);
             const pageChunks = [];
             if (validRows.length === 0) {
               pageChunks.push([]);
@@ -4075,7 +4076,7 @@ Click OK to proceed or Cancel to abort.`);
                                 <tr className="bg-slate-100 text-slate-900 text-[10px] uppercase font-bold border-y-2 border-slate-900">
                                   <th className="p-1.5 border border-slate-300 text-center w-6">#</th>
                                   <th className="p-1.5 border border-slate-300">Description of Goods</th>
-                                  <th className="p-1.5 border border-slate-300 text-center">HSN</th>
+                                  {hasAnyHsn && <th className="p-1.5 border border-slate-300 text-center">HSN</th>}
                                   <th className="p-1.5 border border-slate-300 text-center">Qty</th>
                                   <th className="p-1.5 border border-slate-300 text-right">Rate</th>
                                   <th className="p-1.5 border border-slate-300 text-right">Disc%</th>
@@ -4092,7 +4093,7 @@ Click OK to proceed or Cancel to abort.`);
                                     <tr key={i} className="border-b border-slate-300">
                                       <td className="p-1.5 border border-slate-300 text-center font-mono">{globalIdx + 1}</td>
                                       <td className="p-1.5 border border-slate-300 font-semibold text-slate-900 uppercase">{(r.itemName || "").toUpperCase()}</td>
-                                      <td className="p-1.5 border border-slate-300 text-center font-mono">{r.hsn}</td>
+                                      {hasAnyHsn && <td className="p-1.5 border border-slate-300 text-center font-mono">{r.hsn}</td>}
                                       <td className="p-1.5 border border-slate-300 text-center font-bold">{r.qty} {r.unit}</td>
                                       <td className="p-1.5 border border-slate-300 text-right font-mono">₹{t.sellingRate.toFixed(2)}</td>
                                       <td className="p-1.5 border border-slate-300 text-right font-mono">{r.discountPercent}%</td>
