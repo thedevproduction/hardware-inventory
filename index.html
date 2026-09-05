@@ -3876,6 +3876,13 @@ Click OK to proceed or Cancel to abort.`);
 
           {/* PRINTABLE A4 CUSTOMER LEDGER STATEMENT MODAL */}
           {isPrintLedgerOpen && ledgerViewCustomer && (() => {
+            const formatPrintLedgerAccountName = (name) => {
+              if (!name) return "";
+              return String(name)
+                .replace(/SH[\/-]\d{4}[-\/]\d{2}[\/-]/gi, '')
+                .replace(/SH[\/-][A-Za-z0-9-]+\//gi, '');
+            };
+
             const ledgerData = getCustomerLedgerDetails(ledgerViewCustomer, ledgerStartDate, ledgerEndDate);
 
             return (
@@ -3961,7 +3968,7 @@ Click OK to proceed or Cancel to abort.`);
                                 <td className="p-1.5 border border-slate-300 text-center font-sans text-[10px] font-bold">
                                   {row.type}
                                 </td>
-                                <td className="p-1.5 border border-slate-300 font-sans font-medium">{row.accountName}</td>
+                                <td className="p-1.5 border border-slate-300 font-sans font-medium">{formatPrintLedgerAccountName(row.accountName)}</td>
                                 <td className="p-1.5 border border-slate-300 text-right">{row.debit > 0 ? `₹${row.debit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '-'}</td>
                                 <td className="p-1.5 border border-slate-300 text-right">{row.credit > 0 ? `₹${row.credit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '-'}</td>
                                 <td className="p-1.5 border border-slate-300 text-right font-bold">
