@@ -5,7 +5,30 @@ import base64
 import mimetypes
 import os
 import re
+import hashlib
 from urllib.parse import urlparse
+
+PASSWORD_SALT = "sudama_hardware_salt_2026"
+
+def hash_password(password: str) -> str:
+    if not password:
+        return ""
+    if str(password).startswith("sha256$"):
+        return str(password)
+    hashed = hashlib.sha256((PASSWORD_SALT + str(password)).encode('utf-8')).hexdigest()
+    return f"sha256${hashed}"
+
+def process_and_hash_users(users_data):
+    if not isinstance(users_data, list):
+        return users_data
+    cleaned = []
+    for u in users_data:
+        if isinstance(u, dict):
+            u_copy = {**u}
+            if 'password' in u_copy:
+                u_copy['password'] = hash_password(u_copy['password'])
+            cleaned.append(u_copy)
+    return cleaned
 
 PORT = 3000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -55,7 +78,7 @@ DEFAULT_USERS = [
     {
         "id": "u1",
         "username": "hardware.sudama@gmail.com",
-        "password": "sudama@deep",
+        "password": hash_password("sudama@deep"),
         "name": "Sudama Owner (Admin)",
         "role": "Admin",
         "createdAt": "2026-01-01T00:00:00.000Z"
@@ -447,12 +470,15 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
         if parsed.path == '/api/data':
+            raw_users = load_json(USERS_FILE, DEFAULT_USERS)
+            hashed_users = process_and_hash_users(raw_users)
+            save_json(USERS_FILE, hashed_users)
             data = {
                 'invoices': load_json(INVOICES_FILE, []),
                 'quotations': load_json(QUOTATIONS_FILE, []),
                 'catalog': load_json(CATALOG_FILE, None),
                 'storeInfo': load_json(STORE_FILE, None),
-                'users': load_json(USERS_FILE, DEFAULT_USERS),
+                'users': hashed_users,
                 'customers': load_json(CUSTOMERS_FILE, DEFAULT_CUSTOMERS),
                 'vendors': load_json(VENDORS_FILE, DEFAULT_VENDORS),
                 'vendorPurchases': load_json(PURCHASES_FILE, DEFAULT_VENDOR_PURCHASES),
@@ -559,7 +585,8 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         elif parsed.path == '/api/users':
-            save_json(USERS_FILE, payload)
+            hashed_payload = process_and_hash_users(payload)
+            save_json(USERS_FILE, hashed_payload)
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()

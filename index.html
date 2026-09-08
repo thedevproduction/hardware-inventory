@@ -179,14 +179,32 @@
 
   <!-- React Application Logic -->
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
+
+    const PASSWORD_SALT = "sudama_hardware_salt_2026";
+
+    async function hashPasswordAsync(password) {
+      if (!password) return "";
+      if (typeof password === 'string' && password.startsWith("sha256$")) return password;
+      try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(PASSWORD_SALT + password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return `sha256$${hashHex}`;
+      } catch (err) {
+        console.error("Error hashing password:", err);
+        return password;
+      }
+    }
 
     // --- DEFAULT USER ACCOUNTS ---
     const DEFAULT_USERS = [
       {
         id: "u1",
         username: "hardware.sudama@gmail.com",
-        password: "sudama@deep",
+        password: "sha256$5e3d69fc39aad6d78324bf1caa85386e9ef35d43e621be98ec356313bf2544de",
         name: "Sudama Owner (Admin)",
         role: "Admin",
         createdAt: "2026-01-01T00:00:00.000Z"
@@ -541,6 +559,7 @@
 
     // --- MAIN APP COMPONENT ---
     function App() {
+      const isLoadedFromDisk = useRef(false);
 
       // Safe LocalStorage Setter with Quota Exhaustion Fallback for Large Attachments
       const safeSetLocalStorage = (key, data) => {
@@ -932,6 +951,7 @@
       };
  // 'browse' or 'manage'
       const [editingProductId, setEditingProductId] = useState(null);
+      const [isRecordSaved, setIsRecordSaved] = useState(false);
       const [isPrintOpen, setIsPrintOpen] = useState(false);
       const [printReturnTab, setPrintReturnTab] = useState(null);
       const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -1240,15 +1260,18 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
             }
 
             setDiskStatus("Disk Connected");
+            isLoadedFromDisk.current = true;
           })
           .catch(err => {
             console.log("Running in local storage fallback mode:", err);
             setDiskStatus("Browser Mode");
+            isLoadedFromDisk.current = true;
           });
       }, []);
 
-      // Auto-Save States to Hard Disk & LocalStorage
+      // Auto-Save States to Hard Disk & LocalStorage (only after initial load has finished)
       useEffect(() => {
+        if (!isLoadedFromDisk.current) return;
         safeSetLocalStorage('sudama_customers', customers);
         fetch('/api/customers', {
           method: 'POST',
@@ -1259,6 +1282,7 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
 
       // --- CUSTOMER AUTOCOMPLETE LOOKUP HANDLER ---
       const handleCustomerNameInput = (text) => {
+        setIsRecordSaved(false);
         const match = customers.find(c => c.name.toLowerCase() === text.trim().toLowerCase());
         if (match) {
           setCustomer({
@@ -1275,6 +1299,7 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
       };
 
       const handleSelectCustomerFromCatalog = (custObj) => {
+        setIsRecordSaved(false);
         setCustomer({
           name: custObj.name,
           phone: custObj.phone || "",
@@ -1288,6 +1313,7 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
 
       // Auto-Save States to Hard Disk & LocalStorage
       useEffect(() => {
+        if (!isLoadedFromDisk.current) return;
         safeSetLocalStorage('sudama_users', users);
         fetch('/api/users', {
           method: 'POST',
@@ -1297,6 +1323,7 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
       }, [users]);
 
       useEffect(() => {
+        if (!isLoadedFromDisk.current) return;
         safeSetLocalStorage('sudama_store', storeInfo);
         fetch('/api/store', {
           method: 'POST',
@@ -1306,6 +1333,7 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
       }, [storeInfo]);
 
       useEffect(() => {
+        if (!isLoadedFromDisk.current) return;
         safeSetLocalStorage('sudama_catalog', catalog);
         fetch('/api/catalog', {
           method: 'POST',
@@ -1315,6 +1343,7 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
       }, [catalog]);
 
       useEffect(() => {
+        if (!isLoadedFromDisk.current) return;
         safeSetLocalStorage('sudama_categories', categories);
         fetch('/api/categories', {
           method: 'POST',
@@ -1323,7 +1352,8 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
         }).catch(() => {});
       }, [categories]);
 
-            useEffect(() => {
+      useEffect(() => {
+        if (!isLoadedFromDisk.current) return;
         safeSetLocalStorage('sudama_customer_ledger', customerLedger);
         fetch('/api/customer_ledger', {
           method: 'POST',
@@ -1333,6 +1363,7 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
       }, [customerLedger]);
 
       useEffect(() => {
+        if (!isLoadedFromDisk.current) return;
         safeSetLocalStorage('sudama_units', units);
         fetch('/api/units', {
           method: 'POST',
@@ -1342,6 +1373,7 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
       }, [units]);
 
       useEffect(() => {
+        if (!isLoadedFromDisk.current) return;
         safeSetLocalStorage('sudama_invoices', savedInvoices);
         fetch('/api/invoices', {
           method: 'POST',
@@ -1395,17 +1427,20 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
       ]);
 
       // --- LOGIN HANDLER ---
-      const handleLogin = (e) => {
+      const handleLogin = async (e) => {
         e.preventDefault();
         setLoginError("");
+        const inputHash = await hashPasswordAsync(loginForm.password);
+
         const user = users.find(u => 
           u.username.trim().toLowerCase() === loginForm.username.trim().toLowerCase() && 
-          u.password === loginForm.password
+          (u.password === inputHash || u.password === loginForm.password)
         );
 
         if (user) {
-          setCurrentUser(user);
-          sessionStorage.setItem('sudama_auth_user', JSON.stringify(user));
+          const authUser = { ...user, password: user.password.startsWith("sha256$") ? user.password : inputHash };
+          setCurrentUser(authUser);
+          sessionStorage.setItem('sudama_auth_user', JSON.stringify(authUser));
           if (window.confetti) confetti({ particleCount: 45, spread: 65, origin: { y: 0.6 } });
         } else {
           setLoginError("Invalid username or password. Please check your credentials.");
@@ -1421,7 +1456,7 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
       };
 
       // --- USER MANAGEMENT HANDLERS ---
-      const handleAddUser = (e) => {
+      const handleAddUser = async (e) => {
         e.preventDefault();
         if (!newUserForm.username.trim() || !newUserForm.password.trim()) {
           return alert("Please enter both username and password.");
@@ -1429,26 +1464,54 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
         const exists = users.some(u => u.username.toLowerCase() === newUserForm.username.trim().toLowerCase());
         if (exists) return alert("An account with this email/username already exists!");
 
+        const hashedPassword = await hashPasswordAsync(newUserForm.password.trim());
+
         const newUser = {
           id: `u-${Date.now()}`,
           name: newUserForm.name.trim() || newUserForm.username.trim(),
           username: newUserForm.username.trim(),
-          password: newUserForm.password.trim(),
+          password: hashedPassword,
           role: newUserForm.role || "Cashier",
           createdAt: new Date().toISOString()
         };
 
-        setUsers([...users, newUser]);
+        const updatedUsers = [...users, newUser];
+        setUsers(updatedUsers);
+        safeSetLocalStorage('sudama_users', updatedUsers);
+        fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedUsers)
+        }).catch(() => {});
+
         setNewUserForm({ name: "", username: "", password: "", role: "Cashier" });
         alert(`User account ${newUser.username} created successfully!`);
       };
 
-      const handleChangeUserPassword = (e) => {
+      const handleChangeUserPassword = async (e) => {
         e.preventDefault();
         if (!changePassForm.userId || !changePassForm.newPassword.trim()) {
           return alert("Please select a user and enter a new password.");
         }
-        setUsers(users.map(u => u.id === changePassForm.userId ? { ...u, password: changePassForm.newPassword.trim() } : u));
+        const newPassword = changePassForm.newPassword.trim();
+        const hashedPassword = await hashPasswordAsync(newPassword);
+
+        const updatedUsers = users.map(u => u.id === changePassForm.userId ? { ...u, password: hashedPassword } : u);
+        setUsers(updatedUsers);
+        safeSetLocalStorage('sudama_users', updatedUsers);
+
+        fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedUsers)
+        }).catch(err => console.error("Error saving updated users to disk:", err));
+
+        if (currentUser && currentUser.id === changePassForm.userId) {
+          const updatedCurrentUser = { ...currentUser, password: hashedPassword };
+          setCurrentUser(updatedCurrentUser);
+          sessionStorage.setItem('sudama_auth_user', JSON.stringify(updatedCurrentUser));
+        }
+
         setChangePassForm({ userId: "", newPassword: "" });
         alert("Password updated successfully!");
       };
@@ -1480,11 +1543,25 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
 
       const currentInvoiceData = { customer, rows, summary, invoiceNumber, invoiceDate, dueDate, paymentMode, isIgst };
 
+      // --- RECORD SAVE & UNSAVED CHANGES TRACKING ---
+      const hasRecordData = Boolean(
+        (customer && customer.name && customer.name.trim().length > 0) ||
+        (rows && rows.some(r => (r.itemName && r.itemName.trim().length > 0) || Number(r.rate) > 0 || Number(r.qty) > 1))
+      );
+
+      const checkUnsavedAndConfirm = () => {
+        if (!isRecordSaved && hasRecordData) {
+          return confirm(`⚠️ Unsaved Changes Warning:\n\nYou have unsaved changes in the current ${docType === 'quotation' ? 'Quotation' : 'Bill'}.\n\nStarting a new record will discard these unsaved changes.\n\nClick OK to discard unsaved changes and start a new record, or Cancel to keep editing.`);
+        }
+        return true;
+      };
+
       // --- NEW BILLING ACTION ---
       
       const handleNewBilling = () => handleNewBillMode();
 
       const handleNewBillMode = () => {
+        if (!checkUnsavedAndConfirm()) return;
         setDocType('bill');
         setConvertedFromQuotationNumber(null);
         setCustomer({
@@ -1507,9 +1584,11 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
         });
         setInvoiceNumber(formatInvoiceNumber(highestSeq + 1));
         setMiscCharges(0);
+        setIsRecordSaved(false);
       };
 
       const handleNewQuotationMode = () => {
+        if (!checkUnsavedAndConfirm()) return;
         setDocType('quotation');
         setConvertedFromQuotationNumber(null);
         setCustomer({
@@ -1527,9 +1606,11 @@ const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
         setQuotationDate(getTodayDate());
         setQuotationNumber(generateQuotationNumber(savedQuotations));
         setMiscCharges(0);
+        setIsRecordSaved(false);
       };
 
       const handleConvertQuotationToBill = (q) => {
+        if (!checkUnsavedAndConfirm()) return;
         const newSeq = lastInvoiceSeq + 1;
         const newInvNum = formatInvoiceNumber(newSeq);
 
@@ -1551,12 +1632,14 @@ Click OK to proceed or Cancel to abort.`);
 
         setInvoiceNumber(newInvNum);
         setInvoiceDate(getTodayDate());
+        setIsRecordSaved(false);
         setIsHistoryOpen(false);
 
         if (window.confetti) confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
       };
 
       const handleEditQuotation = (q) => {
+        if (!checkUnsavedAndConfirm()) return;
         setDocType('quotation');
         setQuotationNumber(q.quotationNumber);
         setQuotationDate(q.quotationDate || getTodayDate());
@@ -1565,6 +1648,7 @@ Click OK to proceed or Cancel to abort.`);
         if (q.paymentMode) setPaymentMode(q.paymentMode);
         if (q.rows) setRows(q.rows);
         if (q.miscCharges) setMiscCharges(q.miscCharges);
+        setIsRecordSaved(true);
         setIsHistoryOpen(false);
       };
 
@@ -1584,6 +1668,7 @@ Click OK to proceed or Cancel to abort.`);
 
       // --- ITEM NAME INPUT WITH INSTANT AUTO-FILL LOOKUP ---
       const handleItemNameInput = (idx, text) => {
+        setIsRecordSaved(false);
         const updated = [...rows];
         const match = catalog.find(p => p.name.toLowerCase() === text.trim().toLowerCase());
         if (match) {
@@ -1603,12 +1688,14 @@ Click OK to proceed or Cancel to abort.`);
 
       // Row updates
       const updateRowField = (idx, field, value) => {
+        setIsRecordSaved(false);
         const updated = [...rows];
         updated[idx] = { ...updated[idx], [field]: value, manualTotal: undefined };
         setRows(updated);
       };
 
       const handleRowTotalOverride = (idx, inputVal) => {
+        setIsRecordSaved(false);
         const updated = [...rows];
         const r = updated[idx];
 
@@ -1654,11 +1741,13 @@ Click OK to proceed or Cancel to abort.`);
       };
 
       const handleAddRow = () => {
+        setIsRecordSaved(false);
         setRows([...rows, { id: `row-${Date.now()}`, itemName: "", hsn: "3917", qty: 1, unit: "Pcs", rate: 0, ppPercent: 0, discountPercent: 0, gstPercent: 18 }]);
       };
 
       const handleDeleteRow = (idx) => {
         if (rows.length === 1) return alert("At least one line item is required.");
+        setIsRecordSaved(false);
         setRows(rows.filter((_, i) => i !== idx));
       };
 
@@ -1691,6 +1780,7 @@ Click OK to proceed or Cancel to abort.`);
             body: JSON.stringify(updated)
           }).catch(() => {});
 
+          setIsRecordSaved(true);
           if (window.confetti) confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
           alert(`Quotation ${quotationNumber} saved to Quotation Register successfully!`);
         } else {
@@ -1736,10 +1826,9 @@ Click OK to proceed or Cancel to abort.`);
           const newSeq = Math.max(lastInvoiceSeq, currentSeq);
           setLastInvoiceSeq(newSeq);
 
+          setIsRecordSaved(true);
           if (window.confetti) confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
           alert(`Tax Invoice ${invoiceNumber} saved to Sales Register!${archMsg}`);
-
-          setInvoiceNumber(formatInvoiceNumber(newSeq + 1));
         }
       };
 
@@ -2306,10 +2395,23 @@ Click OK to proceed or Cancel to abort.`);
             {/* Customer Details */}
             <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 shadow-xl backdrop-blur-md">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider font-heading">
                     {docType === 'quotation' ? 'Customer & Quotation Information' : 'Customer & Billing Information'}
                   </h2>
+                  {isRecordSaved ? (
+                    <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-950/80 border border-emerald-500/50 px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow flex items-center gap-1">
+                      🟢 Saved
+                    </span>
+                  ) : hasRecordData ? (
+                    <span className="text-[10px] font-extrabold text-amber-300 bg-amber-950/90 border border-amber-500/60 px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow animate-pulse flex items-center gap-1">
+                      🟡 Unsaved Changes
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-medium text-slate-400 bg-slate-800/80 border border-slate-700 px-2.5 py-0.5 rounded-full tracking-wider flex items-center gap-1">
+                      📄 New Record
+                    </span>
+                  )}
                   {docType === 'quotation' ? (
                     <>
                       <span className="text-[10px] font-extrabold text-cyan-300 bg-cyan-950/90 border border-cyan-500/50 px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow">
@@ -2330,7 +2432,7 @@ Click OK to proceed or Cancel to abort.`);
                 </div>
                 <div className="flex items-center gap-1.5 text-xs">
                   {['Walk-in', 'Contractor', 'Plumber/Electrician', 'Wholesale'].map(t => (
-                    <button key={t} onClick={() => setCustomerType(t)} className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${customerType === t ? 'bg-amber-500/20 border-amber-500 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>{t}</button>
+                    <button key={t} onClick={() => { setCustomerType(t); setIsRecordSaved(false); }} className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${customerType === t ? 'bg-amber-500/20 border-amber-500 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>{t}</button>
                   ))}
                 </div>
               </div>
@@ -2374,11 +2476,11 @@ Click OK to proceed or Cancel to abort.`);
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1 font-semibold">Mobile / Phone</label>
-                  <input type="text" value={customer.phone} onChange={e => setCustomer({...customer, phone: e.target.value})} placeholder="+91 98270 XXXXX" className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-slate-100 font-mono outline-none" />
+                  <input type="text" value={customer.phone} onChange={e => { setCustomer({...customer, phone: e.target.value}); setIsRecordSaved(false); }} placeholder="+91 98270 XXXXX" className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-slate-100 font-mono outline-none" />
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1 font-semibold">Customer GSTIN</label>
-                  <input type="text" value={customer.gstin} onChange={e => setCustomer({...customer, gstin: e.target.value.toUpperCase()})} placeholder="22ABCDE1234F1Z5" className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-slate-100 font-mono uppercase outline-none" />
+                  <input type="text" value={customer.gstin} onChange={e => { setCustomer({...customer, gstin: e.target.value.toUpperCase()}); setIsRecordSaved(false); }} placeholder="22ABCDE1234F1Z5" className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-slate-100 font-mono uppercase outline-none" />
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1 font-semibold">
@@ -2388,6 +2490,7 @@ Click OK to proceed or Cancel to abort.`);
                     type="text"
                     value={docType === 'quotation' ? quotationNumber : invoiceNumber}
                     onChange={e => {
+                      setIsRecordSaved(false);
                       if (docType === 'quotation') setQuotationNumber(e.target.value);
                       else setInvoiceNumber(e.target.value);
                     }}
@@ -2398,7 +2501,7 @@ Click OK to proceed or Cancel to abort.`);
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-slate-400 mb-1 font-semibold">Site / Delivery Address</label>
-                  <input type="text" value={customer.address} onChange={e => setCustomer({...customer, address: e.target.value})} placeholder="Site address..." className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-slate-100 outline-none" />
+                  <input type="text" value={customer.address} onChange={e => { setCustomer({...customer, address: e.target.value}); setIsRecordSaved(false); }} placeholder="Site address..." className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-slate-100 outline-none" />
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1 font-semibold">
@@ -2408,6 +2511,7 @@ Click OK to proceed or Cancel to abort.`);
                     type="date"
                     value={docType === 'quotation' ? quotationDate : invoiceDate}
                     onChange={e => {
+                      setIsRecordSaved(false);
                       if (docType === 'quotation') setQuotationDate(e.target.value);
                       else setInvoiceDate(e.target.value);
                     }}
@@ -2416,7 +2520,7 @@ Click OK to proceed or Cancel to abort.`);
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1 font-semibold">Payment Status</label>
-                  <select value={paymentMode} onChange={e => setPaymentMode(e.target.value)} className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-slate-100 font-semibold outline-none">
+                  <select value={paymentMode} onChange={e => { setPaymentMode(e.target.value); setIsRecordSaved(false); }} className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-slate-100 font-semibold outline-none">
                     <option value="Cash Paid">Cash (Paid)</option>
                     <option value="UPI / Online">UPI / QR Code</option>
                     <option value="Bank Transfer">Bank Transfer / NEFT</option>
@@ -2671,7 +2775,7 @@ Click OK to proceed or Cancel to abort.`);
                       min="0"
                       step="any"
                       value={miscCharges}
-                      onChange={e => setMiscCharges(e.target.value)}
+                      onChange={e => { setMiscCharges(e.target.value); setIsRecordSaved(false); }}
                       placeholder="0.00"
                       className="w-24 bg-slate-950 border border-slate-700 focus:border-amber-500 rounded px-2 py-0.5 text-right font-mono text-slate-100 outline-none text-xs"
                       title="Add miscellaneous cost (freight, transport, packing) added after GST"
@@ -2707,7 +2811,7 @@ Click OK to proceed or Cancel to abort.`);
                 <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-800">
                   <button
                     onClick={handleSaveInvoice}
-                    className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2 rounded-lg border border-slate-700 text-xs transition"
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2 rounded-lg border border-slate-700 text-xs transition flex items-center justify-center gap-1"
                     title="Save invoice to Hard Disk & History Register"
                   >
                     💾 Save Register
@@ -4460,6 +4564,7 @@ Click OK to proceed or Cancel to abort.`);
                                   <div className="flex items-center justify-center gap-3">
                                     <button
                                       onClick={() => {
+                                        if (!checkUnsavedAndConfirm()) return;
                                         setDocType('bill');
                                         if (inv.customer) setCustomer(inv.customer);
                                         if (inv.rows) setRows(inv.rows);
@@ -4467,6 +4572,8 @@ Click OK to proceed or Cancel to abort.`);
                                         if (inv.invoiceDate) setInvoiceDate(inv.invoiceDate);
                                         if (inv.dueDate) setDueDate(inv.dueDate);
                                         if (inv.paymentMode) setPaymentMode(inv.paymentMode);
+                                        if (inv.miscCharges) setMiscCharges(inv.miscCharges);
+                                        setIsRecordSaved(true);
                                         setIsHistoryOpen(false);
                                       }}
                                       className="bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold border border-amber-500/40 transition"
